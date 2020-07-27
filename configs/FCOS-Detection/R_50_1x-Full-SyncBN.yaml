@@ -1,0 +1,18 @@
+_BASE_: "Base-FCOS.yaml"
+MODEL:
+  WEIGHTS: "weights/det-resnet50/resnet50-19c8e357.pth"
+  RESNETS:
+    DEPTH: 50
+    NORM: "SyncBN"
+  BACKBONE:
+    FREEZE_AT: 0
+  FPN:
+    NORM: "SyncBN"
+    USE_RELU: True
+  FCOS:
+    NORM: "SyncBN"
+  # open the mix precision if GPU memory not enough. Known issue: fp16 conflicts with SyncBN for multi GPU training
+  #fp16: True
+INPUT:
+  MIN_SIZE_TRAIN: (800,)
+OUTPUT_DIR: "output/fcos/R_50_1x-Full-SyncBN"
