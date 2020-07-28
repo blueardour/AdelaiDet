@@ -60,7 +60,7 @@ class FCOS(nn.Module):
         pred_class_logits, pred_deltas, pred_centerness, top_feats, bbox_towers = self.fcos_head(
             features, top_module, self.yield_proposal)
         return pred_class_logits, pred_deltas, pred_centerness, top_feats, bbox_towers
-        return pred_class_logits, pred_deltas, pred_centerness, top_feats, bbox_towers
+
     def forward(self, images, features, gt_instances=None, top_module=None):
         """
         Arguments:
