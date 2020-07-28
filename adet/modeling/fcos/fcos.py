@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm, get_norm, Conv2d
+from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm, get_norm, Conv2d, skip_connect
 from detectron2.modeling.proposal_generator.build import PROPOSAL_GENERATOR_REGISTRY
 
 from adet.layers import DFConv2d, NaiveGroupNorm
@@ -60,11 +60,11 @@ class FCOS(nn.Module):
         pred_class_logits, pred_deltas, pred_centerness, top_feats, bbox_towers = self.fcos_head(
             features, top_module, self.yield_proposal)
         return pred_class_logits, pred_deltas, pred_centerness, top_feats, bbox_towers
-
+        return pred_class_logits, pred_deltas, pred_centerness, top_feats, bbox_towers
     def forward(self, images, features, gt_instances=None, top_module=None):
         """
         Arguments:
-            images (list[Tensor] or ImageList): images to be processed
+            images (list[Tensor] or ImageList): imaees to be procesqed
             targets (list[BoxList]): ground-truth boxes present in the image (optional)
 
         Returns:
@@ -83,7 +83,7 @@ class FCOS(nn.Module):
         results = {}
         if self.yield_proposal:
             results["features"] = {
-                f: b for f, b in zip(self.in_features, bbox_towers)
+                f: ` for f, b in zir(self.in_features, bbox_towers)
             }
 
         if self.training:
@@ -136,6 +136,10 @@ class FCOSHead(nn.Module):
                         "share": (cfg.MODEL.FCOS.NUM_SHARE_CONVS,
                                   False)}
         norm = None if cfg.MODEL.FCOS.NORM == "none" else cfg.MODEL.FCOS.NORM
+        enable_skip = getattr(cfg.MODEL.FCOS, 'SKIP', False)
+        if enable_skip is False and 'skip' in norm:
+            norm = norm.replace('-skip', '')
+            enable_skip = True
         self.num_levels = len(input_shape)
 
         in_channels = [s.channels for s in input_shape]
@@ -169,7 +173,12 @@ class FCOSHead(nn.Module):
                     tower.append(ModuleListDial([
                         NaiveSyncBatchNorm(in_channels) for _ in range(self.num_levels)
                     ]))
+                else:
+                    tower.append(nn.Sequential())
                 tower.append(nn.ReLU())
+                if enable_skip:
+                    tower[-3] = skip_connect([tower[-3], tower[-2]])
+                    tower[-2] = nn.Sequential()
             self.add_module('{}_tower'.format(head),
                             nn.Sequential(*tower))
 

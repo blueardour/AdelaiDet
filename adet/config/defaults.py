@@ -30,6 +30,7 @@ _C.MODEL.FCOS.POST_NMS_TOPK_TRAIN = 100
 _C.MODEL.FCOS.POST_NMS_TOPK_TEST = 100
 _C.MODEL.FCOS.TOP_LEVELS = 2
 _C.MODEL.FCOS.NORM = "GN"  # Support GN or none
+_C.MODEL.FCOS.SKIP = False  # Employ Skip connection for improve quantization performance
 _C.MODEL.FCOS.USE_SCALE = True
 
 # Multiply centerness before threshold
