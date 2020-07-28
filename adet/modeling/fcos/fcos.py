@@ -83,7 +83,7 @@ class FCOS(nn.Module):
         results = {}
         if self.yield_proposal:
             results["features"] = {
-                f: ` for f, b in zir(self.in_features, bbox_towers)
+                f: b for f, b in zip(self.in_features, bbox_towers)
             }
 
         if self.training:
