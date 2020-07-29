@@ -4,10 +4,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from detectron2.layers import ShapeSpec
+from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm, get_norm, Conv2d, skip_connect
 from detectron2.modeling.proposal_generator.build import PROPOSAL_GENERATOR_REGISTRY
 
-from adet.layers import DFConv2d, IOULoss
+from adet.layers import DFConv2d, NaiveGroupNorm, IOULoss
 from .batext_outputs import BATextOutputs
 
 
@@ -197,6 +197,10 @@ class FCOSHead(nn.Module):
                         "share": (cfg.MODEL.FCOS.NUM_SHARE_CONVS,
                                   cfg.MODEL.FCOS.USE_DEFORMABLE)}
         norm = None if cfg.MODEL.FCOS.NORM == "none" else cfg.MODEL.FCOS.NORM
+        enable_skip = getattr(cfg.MODEL.FCOS, 'SKIP', False)
+        if enable_skip is False and 'skip' in norm:
+            norm = norm.replace('-skip', '')
+            enable_skip = True
         self.num_levels = len(input_shape)
 
         in_channels = [s.channels for s in input_shape]
@@ -209,7 +213,7 @@ class FCOSHead(nn.Module):
             if use_deformable:
                 conv_func = DFConv2d
             else:
-                conv_func = nn.Conv2d
+                conv_func = Conv2d
             for i in range(num_convs):
                 tower.append(conv_func(
                     in_channels, in_channels,
@@ -228,7 +232,12 @@ class FCOSHead(nn.Module):
                     tower.append(ModuleListDial([
                         NaiveSyncBatchNorm(in_channels) for _ in range(self.num_levels)
                     ]))
+                else:
+                    tower.append(nn.Sequential())
                 tower.append(nn.ReLU())
+                if enable_skip:
+                    tower[-3] = skip_connect([tower[-3], tower[-2]])
+                    tower[-2] = nn.Sequential()
             self.add_module('{}_tower'.format(head),
                             nn.Sequential(*tower))
 
