@@ -14,7 +14,7 @@ MODEL:
   FCOS:
     NORM: "BN"
   # turn on for mix precision training
-  fp16: True
+  #fp16: True
   BATEXT:
     NORM: "BN"
     RECOGNIZER_NORM: "BN" 
@@ -27,4 +27,4 @@ SOLVER:
   CHECKPOINT_PERIOD: 20000
 TEST:
   EVAL_PERIOD: 20000
-OUTPUT_DIR: "output/batext/pretrain/attn_R_18-Full-BN-fp16"
+OUTPUT_DIR: "output/batext/pretrain/attn_R_18-Full-BN"
