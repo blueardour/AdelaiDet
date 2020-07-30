@@ -136,10 +136,7 @@ class FCOSHead(nn.Module):
                         "share": (cfg.MODEL.FCOS.NUM_SHARE_CONVS,
                                   False)}
         norm = None if cfg.MODEL.FCOS.NORM == "none" else cfg.MODEL.FCOS.NORM
-        enable_skip = getattr(cfg.MODEL.FCOS, 'SKIP', False)
-        if enable_skip is False and 'skip' in norm:
-            norm = norm.replace('-skip', '')
-            enable_skip = True
+        skip = getattr(cfg.MODEL.FCOS, 'SKIP', 'none')
         self.num_levels = len(input_shape)
 
         in_channels = [s.channels for s in input_shape]
@@ -176,11 +173,15 @@ class FCOSHead(nn.Module):
                 else:
                     tower.append(nn.Sequential())
                 tower.append(nn.ReLU())
-                if enable_skip:
+                if skip == "conv-wise":
                     tower[-3] = skip_connect([tower[-3], tower[-2]])
                     tower[-2] = nn.Sequential()
-            self.add_module('{}_tower'.format(head),
-                            nn.Sequential(*tower))
+            if skip == 'block-wise':
+                for i in range(num_convs // 2):
+                  tower[6*i] = skip_connect(tower[6*i:6*i+5])
+                  for j in range(1, 5):
+                      tower[6*i+j] = nn.Sequential()
+            self.add_module('{}_tower'.format(head), nn.Sequential(*tower))
 
         self.cls_logits = nn.Conv2d(
             in_channels, self.num_classes,
