@@ -173,10 +173,10 @@ class FCOSHead(nn.Module):
                 else:
                     tower.append(nn.Sequential())
                 tower.append(nn.ReLU())
-                if skip == "conv-wise":
+                if skip == "conv-wise" or ('conv-wise' in skip and head in skip):
                     tower[-3] = skip_connect([tower[-3], tower[-2]])
                     tower[-2] = nn.Sequential()
-            if skip == 'block-wise':
+            if skip == 'block-wise' or ('block-wise' in skip and head in skip):
                 for i in range(num_convs // 2):
                   tower[6*i] = skip_connect(tower[6*i:6*i+5])
                   for j in range(1, 5):
