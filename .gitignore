@@ -13,6 +13,7 @@ __pycache__
 _ext
 *.pyc
 *.so
+*.out
 AdelaiDet.egg-info/
 build/
 dist/

@@ -13,8 +13,8 @@ MODEL:
   FCOS:
     NORM: "SyncBN"
   # open the mix precision if GPU memory not enough. Known issue: fp16 conflicts with SyncBN for multi GPU training
-  #fp16: True
-  #apex_sync_bn: True
+  fp16: True
+  apex_sync_bn: True
   QUANTIZATION:
     scope: [
             'backbone.bottom_up.res2',
@@ -45,4 +45,4 @@ MODEL:
     wt_adaptive: "var-mean"
 INPUT:
   MIN_SIZE_TRAIN: (800,)
-OUTPUT_DIR: "output/fcos/R_50_1x-Full-SyncBN-lsq-4bit"
+OUTPUT_DIR: "output/fcos/R_50_1x-Full-SyncBN-lsq-4bit-fp16"
