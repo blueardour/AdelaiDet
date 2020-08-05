@@ -13,9 +13,9 @@ MODEL:
     USE_RELU: True
   FCOS:
     NORM: "SyncBN"
-    SKIP: "conv-wise"
+    SKIP: "cls-conv-wise"
   # open the mix precision if GPU memory not enough. Known issue: fp16 conflicts with SyncBN for multi GPU training
   #fp16: True
 INPUT:
   MIN_SIZE_TRAIN: (800,)
-OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-ConvWise_Skip"
+OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-CLSConvWise_Skip"
