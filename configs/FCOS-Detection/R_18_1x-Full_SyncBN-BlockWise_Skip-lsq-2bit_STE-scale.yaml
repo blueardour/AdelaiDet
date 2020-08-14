@@ -1,0 +1,51 @@
+_BASE_: "Base-FCOS.yaml"
+MODEL:
+  WEIGHTS: "output/fcos/R_18_1x-Full_SyncBN-BlockWise_Skip/model_final.pth"
+  RESNETS:
+    DEPTH: 18
+    RES2_OUT_CHANNELS: 64
+    NORM: "SyncBN"
+    STRIDE_IN_1X1: False
+  BACKBONE:
+    FREEZE_AT: 0
+  FPN:
+    NORM: "SyncBN"
+    USE_RELU: True
+  FCOS:
+    NORM: "SyncBN"
+    SKIP: "block-wise"
+  # open the mix precision if GPU memory not enough. Known issue: fp16 conflicts with SyncBN for multi GPU training
+  #fp16: True
+  QUANTIZATION:
+    scope: [
+            'backbone.bottom_up.res2',
+            'backbone.bottom_up.res3',
+            'backbone.bottom_up.res4',
+            'backbone.bottom_up.res5',
+            # continue for more branch
+            # FPN
+            'backbone.fpn_lateral3',
+            'backbone.fpn_output3',
+            'backbone.fpn_lateral4',
+            'backbone.fpn_output4',
+            'backbone.fpn_lateral5',
+            'backbone.fpn_output5',
+            'backbone.top_block',
+            # Head tower
+            'proposal_generator.fcos_head.cls_tower',
+            'proposal_generator.fcos_head.bbox_tower',
+           ]
+    keyword: ["debug", "dorefa", "lsq"]
+    fm_enable: True 
+    wt_enable: True 
+    fm_bit: 2.0
+    wt_bit: 2.0
+    fm_grad_type: "STE-scale"
+    wt_grad_type: "STE-scale"
+    fm_boundary: 1.0
+    wt_boundary: 1.0
+    wt_quant_group: 1
+    wt_adaptive: "var-mean"
+INPUT:
+  MIN_SIZE_TRAIN: (800,)
+OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-BlockWise_Skip-lsq-2bit-STE-scale"
