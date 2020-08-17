@@ -8,3 +8,4 @@ MODEL:
     USE_DCN_IN_INSTANCE: False
 DATASETS:
   TRAIN: ("coco_2017_train",)
+OUTPUT_DIR: output/solov2/SOLOv2_R50_800_1x
