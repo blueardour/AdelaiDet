@@ -19,16 +19,15 @@ from fvcore.nn import sigmoid_focal_loss_jit
 
 from .utils import imrescale
 from .loss import dice_loss, FocalLoss
-#from detectron2.layers.DFConv2d import DFConv2d
-#from IPython import embed
-import random
+from .deform_conv import DFConv2d
+# from IPython import embed
 
 
-__all__ = ["SOLOv2"]
+__all__ = ["SOLOv2_LVIS"]
 
 
 @META_ARCH_REGISTRY.register()
-class SOLOv2(nn.Module):
+class SOLOv2_LVIS(nn.Module):
     """
     SOLOv2 model. Creates FPN backbone, instance branch for class-specific kernels,
     mask branch for class-agnostic masks.
@@ -92,10 +91,6 @@ class SOLOv2(nn.Module):
         #                            gamma=cfg.MODEL.SOLOV2.LOSS.FOCAL_GAMMA,
         #                            alpha=cfg.MODEL.SOLOV2.LOSS.FOCAL_ALPHA,
         #                            loss_weight=cfg.MODEL.SOLOV2.LOSS.FOCAL_WEIGHT)
-
-        # optional params.
-        self.flag_semi = cfg.MODEL.SOLOV2.FLAG_SEMI
-        self.ratio_semi = cfg.MODEL.SOLOV2.RATIO_SEMI
 
         # image transform
         pixel_mean = torch.Tensor(cfg.MODEL.PIXEL_MEAN).to(self.device).view(3, 1, 1)
@@ -318,17 +313,8 @@ class SOLOv2(nn.Module):
                 continue
             input = torch.sigmoid(input)
             loss_ins.append(dice_loss(input, target))
-
-        a = 1
-        if self.flag_semi:
-            loss_ins = torch.cat(loss_ins)
-            list_ins = [_ for _ in range(len(loss_ins))]
-            num_sampled = int(math.ceil(self.ratio_semi * len(loss_ins)))
-            index_sampled = cate_label_list[0][0].new_tensor(random.sample(list_ins, num_sampled))
-            loss_ins_mean = loss_ins[index_sampled].mean()
-        else:
-            loss_ins_mean = torch.cat(loss_ins).mean()
-        loss_ins = loss_ins_mean * self.ins_loss_weight
+        loss_ins = torch.cat(loss_ins).mean()
+        loss_ins = loss_ins * self.ins_loss_weight
 
         # cate
         cate_labels = [
@@ -526,6 +512,15 @@ class SOLOv2(nn.Module):
             strides[size_trans[ind_ - 1]:size_trans[ind_]] *= self.instance_strides[ind_]
         strides = strides[inds[:, 0]]
 
+        # sort and keep top nms_pre
+        sort_inds = torch.argsort(cate_scores, descending=True)
+        if len(sort_inds) > self.max_before_nms:
+            sort_inds = sort_inds[:self.max_before_nms]
+        cate_scores = cate_scores[sort_inds]
+        cate_labels = cate_labels[sort_inds]
+        kernel_preds = kernel_preds[sort_inds, :]
+        strides = strides[sort_inds]
+
         # mask encoding.
         N, I = kernel_preds.shape
         kernel_preds = kernel_preds.view(N, I, 1, 1)
@@ -554,16 +549,6 @@ class SOLOv2(nn.Module):
         # mask scoring.
         seg_scores = (seg_preds * seg_masks.float()).sum((1, 2)) / sum_masks
         cate_scores *= seg_scores
-
-        # sort and keep top nms_pre
-        sort_inds = torch.argsort(cate_scores, descending=True)
-        if len(sort_inds) > self.max_before_nms:
-            sort_inds = sort_inds[:self.max_before_nms]
-        seg_masks = seg_masks[sort_inds, :, :]
-        seg_preds = seg_preds[sort_inds, :, :]
-        sum_masks = sum_masks[sort_inds]
-        cate_scores = cate_scores[sort_inds]
-        cate_labels = cate_labels[sort_inds]
 
         if self.nms_type == "matrix":
             # matrix nms & filter.
@@ -663,7 +648,7 @@ class SOLOv2InsHead(nn.Module):
             tower = []
             num_convs, use_deformable, use_coord = head_configs[head]
             for i in range(num_convs):
-                if use_deformable and i == num_convs - 1:
+                if use_deformable:
                     if self.type_dcn == "DCN":
                         conv_func = DFConv2d
                     else:

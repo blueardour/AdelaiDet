@@ -1,0 +1,13 @@
+_BASE_: "Base-SOLOv2.yaml"
+MODEL:
+  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  RESNETS:
+    DEPTH: 50
+  SOLOV2:
+    NUM_INSTANCE_CONVS: 4
+    USE_DCN_IN_INSTANCE: False
+SOLVER:
+  STEPS: (210000, 250000)
+  MAX_ITER: 270000
+DATASETS:
+  TRAIN: ("coco_2017_train",)
