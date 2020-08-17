@@ -1,0 +1,21 @@
+_BASE_: "Base-SOLOv2.yaml"
+MODEL:
+  WEIGHTS: "/mnt/cephfs_new_wj/mlnlp/zhangrufeng/pretrained/detectron2/R-50.pkl"
+  # mmdetection 和 detectron设定不太一样，直接加载模型得用这个，直接训练可以不加.
+  PIXEL_MEAN: [103.530, 116.280, 123.675]
+  PIXEL_STD: [57.375, 57.120, 58.395]
+  RESNETS:
+    DEPTH: 50
+    DEFORM_ON_PER_STAGE: [False, True, True, True]
+    DEFORM_MODULATED: False
+    DEFORM_NUM_GROUPS: 1
+  SOLOV2:
+    NUM_INSTANCE_CONVS: 3
+    USE_DCN_IN_INSTANCE: True
+    TYPE_DCN: "DCN"
+DATASETS:
+  TRAIN: ("coco_2017_val",)
+INPUT:
+  MIN_SIZE_TEST: 512
+  MAX_SIZE_TEST: 852
+

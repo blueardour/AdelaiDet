@@ -246,3 +246,42 @@ _C.MODEL.BiFPN.NUM_REPEATS = 6
 
 # Options: "" (no norm), "GN"
 _C.MODEL.BiFPN.NORM = ""
+
+
+# ---------------------------------------------------------------------------#
+# SOLO Instance parameters
+_C.MODEL.SOLOV2.INSTANCE_IN_FEATURES = ["p2", "p3", "p4", "p5", "p6"]
+_C.MODEL.SOLOV2.FPN_INSTANCE_STRIDES = [8, 8, 16, 32, 32]
+# Channel size for the instance head.
+_C.MODEL.SOLOV2.INSTANCE_IN_CHANNELS = 256
+_C.MODEL.SOLOV2.INSTANCE_CHANNELS = 256
+# Convolutions to use in the instance head.
+_C.MODEL.SOLOV2.NUM_INSTANCE_CONVS = 4
+_C.MODEL.SOLOV2.USE_DCN_IN_INSTANCE = False
+_C.MODEL.SOLOV2.TYPE_DCN = 'DCN'
+_C.MODEL.SOLOV2.NUM_GRIDS = [40, 36, 24, 16, 12]
+# Number of foreground classes
+_C.MODEL.SOLOV2.NUM_CLASSES = 80
+_C.MODEL.SOLOV2.NUM_KERNELS = 128
+_C.MODEL.SOLOV2.NORM = "GN"
+_C.MODEL.SOLOV2.USE_COORD_CONV = True
+_C.MODEL.SOLOV2.PRIOR_PROB = 0.01
+
+# Mask parameters
+# Channel size for the mask tower
+_C.MODEL.SOLOV2.MASK_IN_FEATURES = ["p2", "p3", "p4", "p5"]
+_C.MODEL.SOLOV2.MASK_IN_CHANNELS = 256
+_C.MODEL.SOLOV2.MASK_CHANNELS = 128
+_C.MODEL.SOLOV2.NUM_MASKS = 128
+
+# Test
+_C.MODEL.SOLOV2.NMS_PRE = 500
+_C.MODEL.SOLOV2.SCORE_THR = 0.1
+_C.MODEL.SOLOV2.UPDATE_THR = 0.05
+_C.MODEL.SOLOV2.MASK_THR = 0.5
+_C.MODEL.SOLOV2.MAX_PER_IMG = 100
+# gaussian / linear
+_C.MODEL.SOLOV2.NMS_KERNEL = "gaussian"
+_C.MODEL.SOLOV2.SIGMA = 2
+# ---------------------------------------------------------------------------#
+

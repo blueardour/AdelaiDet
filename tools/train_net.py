@@ -39,7 +39,6 @@ from detectron2.utils.logger import setup_logger
 
 from adet.data.dataset_mapper import DatasetMapperWithBasis
 from adet.config import get_cfg
-from adet.checkpoint import AdetCheckpointer
 from adet.evaluation import TextEvaluator
 
 
@@ -48,81 +47,6 @@ class Trainer(DefaultTrainer):
     This is the same Trainer except that we rewrite the
     `build_train_loader` method.
     """
-
-    def __init__(self, cfg):
-        """
-        Args:
-            cfg (CfgNode):
-        Use the custom checkpointer, which loads other backbone models
-        with matching heuristics.
-        """
-        # Assume these objects must be constructed in this order.
-        model = self.build_model(cfg)
-        optimizer = self.build_optimizer(cfg, model)
-        data_loader = self.build_train_loader(cfg)
-
-        if cfg.MODEL.fp16:
-            import apex
-            from apex import amp
-            if cfg.MODEL.apex_sync_bn:
-                model = apex.parallel.convert_syncbn_model(model)
-            model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
-
-        # For training, wrap with DDP. But don't need this for inference.
-        if comm.get_world_size() > 1:
-            model = DistributedDataParallel(
-                model, device_ids=[comm.get_local_rank()], broadcast_buffers=False
-            )
-        super(DefaultTrainer, self).__init__(model, data_loader, optimizer)
-
-        self.scheduler = self.build_lr_scheduler(cfg, optimizer)
-        # Assume no other objects need to be checkpointed.
-        # We can later make it checkpoint the stateful hooks
-        self.checkpointer = AdetCheckpointer(
-            # Assume you want to save checkpoints together with logs/statistics
-            model,
-            cfg.OUTPUT_DIR,
-            optimizer=optimizer,
-            scheduler=self.scheduler,
-            amp=amp if cfg.MODEL.fp16 else None,
-        )
-        self.start_iter = 0
-        self.max_iter = cfg.SOLVER.MAX_ITER
-        self.cfg = cfg
-
-        self.register_hooks(self.build_hooks())
-
-    def train_loop(self, start_iter: int, max_iter: int):
-        """
-        Args:
-            start_iter, max_iter (int): See docs above
-        """
-        logger = logging.getLogger("adet.trainer")
-        logger.info("Starting training from iteration {}".format(start_iter))
-
-        self.iter = self.start_iter = start_iter
-        self.max_iter = max_iter
-
-        with EventStorage(start_iter) as self.storage:
-            self.before_train()
-            for self.iter in range(start_iter, max_iter):
-                self.before_step()
-                self.run_step()
-                self.after_step()
-            self.after_train()
-
-    def train(self):
-        """
-        Run training.
-
-        Returns:
-            OrderedDict of results, if evaluation is enabled. Otherwise None.
-        """
-        self.train_loop(self.start_iter, self.max_iter)
-        if hasattr(self, "_last_eval_results") and comm.is_main_process():
-            verify_results(self.cfg, self._last_eval_results)
-            return self._last_eval_results
-
     @classmethod
     def build_train_loader(cls, cfg):
         """
