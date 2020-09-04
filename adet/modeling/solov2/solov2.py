@@ -19,7 +19,8 @@ from fvcore.nn import sigmoid_focal_loss_jit
 
 from .utils import imrescale
 from .loss import dice_loss, FocalLoss
-from detectron2.layers import Conv2d, NaiveSyncBatchNorm #DFConv2d
+from detectron2.layers import Conv2d, get_norm
+# import DFConv2d from local folder ?
 #from IPython import embed
 import random
 
@@ -698,13 +699,10 @@ class SOLOv2InsHead(nn.Module):
                 ))
                 if norm == "GN":
                     tower.append(nn.GroupNorm(32, self.instance_channels))
-                elif norm == "BN":
+                elif norm == "BN" or norm == "SyncBN":
+                    # very likey to stuck when using ModuleListDial during training, unknown reason
                     tower.append(ModuleListDial([
-                        nn.BatchNorm2d(self.instance_channels) for _ in range(self.num_levels)
-                    ]))
-                elif norm == "SyncBN":
-                    tower.append(ModuleListDial([
-                        NaiveSyncBatchNorm(self.instance_channels) for _ in range(self.num_levels)
+                        get_norm(norm, self.instance_channels) for _ in range(self.num_levels)
                     ]))
                 else:
                     tower.append(nn.Sequential())
@@ -804,12 +802,8 @@ class SOLOv2MaskHead(nn.Module):
                     kernel_size=3, stride=1,
                     padding=1, bias=norm is None
                 ))
-                if norm == "GN":
-                    conv_tower.append(nn.GroupNorm(32, self.mask_channels))
-                elif norm == "BN":
-                    conv_tower.append(nn.BatchNorm2d(self.mask_channels))
-                elif norm == "SyncBN":
-                    conv_tower.append(NaiveSyncBatchNorm(self.mask_channels))
+                if norm in ["GN", "BN", "SyncBN"]:
+                    conv_tower.append(get_norm(norm, self.mask_channels))
                 else:
                     conv_tower.append(nn.Sequential())
                 conv_tower.append(nn.ReLU(inplace=False))
@@ -826,12 +820,8 @@ class SOLOv2MaskHead(nn.Module):
                         kernel_size=3, stride=1,
                         padding=1, bias=norm is None
                     ))
-                    if norm == "GN":
-                        conv_tower.append(nn.GroupNorm(32, self.mask_channels))
-                    elif norm == "BN":
-                        conv_tower.append(nn.BatchNorm2d(self.mask_channels))
-                    elif norm == "SyncBN":
-                        conv_tower.append(NaiveSyncBatchNorm(self.mask_channels))
+                    if norm in ["GN", "BN", "SyncBN"]:
+                        conv_tower.append(get_norm(norm, self.mask_channels))
                     else:
                         conv_tower.append(nn.Sequential())
                     conv_tower.append(nn.ReLU(inplace=False))
@@ -848,12 +838,8 @@ class SOLOv2MaskHead(nn.Module):
                     kernel_size=3, stride=1,
                     padding=1, bias=norm is None
                 ))
-                if norm == "GN":
-                    conv_tower.append(nn.GroupNorm(32, self.mask_channels))
-                elif norm == "BN":
-                    conv_tower.append(nn.BatchNorm2d(self.mask_channels))
-                elif norm == "SyncBN":
-                    conv_tower.append(NaiveSyncBatchNorm(self.mask_channels))
+                if norm in ["GN", "BN", "SyncBN"]:
+                    conv_tower.append(get_norm(norm, self.mask_channels))
                 else:
                     conv_tower.append(nn.Sequential())
                 conv_tower.append(nn.ReLU(inplace=False))
@@ -864,18 +850,12 @@ class SOLOv2MaskHead(nn.Module):
 
             self.convs_all_levels.append(convs_per_level)
 
-        if norm == "BN":
-            conv_pred_norm = nn.BatchNorm2d(self.num_masks)
-        elif norm == "SyncBN":
-            conv_pred_norm = NaiveSyncBatchNorm(self.num_masks)
-        else:
-            conv_pred_norm = nn.GroupNorm(32, self.num_masks)
         self.conv_pred = nn.Sequential(
             nn.Conv2d(
                 self.mask_channels, self.num_masks,
                 kernel_size=1, stride=1,
                 padding=0, bias=norm is None),
-            conv_pred_norm,
+            get_norm(norm, self.num_masks),
             nn.ReLU(inplace=True)
         )
 
