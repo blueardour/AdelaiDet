@@ -1,9 +1,9 @@
 _BASE_: "Base-Pretrain.yaml"
 MODEL:
-  WEIGHTS: "weights/det-resnet18/resnet18_w32a32.pth"
+  WEIGHTS: "weights/det-resnet50/resnet50-19c8e357.pth"
   RESNETS:
-    DEPTH: 18
-    RES2_OUT_CHANNELS: 64
+    DEPTH: 50
+    RES2_OUT_CHANNELS: 256
     NORM: "SyncBN"
     STRIDE_IN_1X1: False
   BACKBONE:
@@ -27,4 +27,4 @@ SOLVER:
   CHECKPOINT_PERIOD: 20000
 TEST:
   EVAL_PERIOD: 20000
-OUTPUT_DIR: "output/batext/pretrain/attn_R_18-Full_SyncBN"
+OUTPUT_DIR: "output/batext/pretrain/attn_R_50-Full_SyncBN"
