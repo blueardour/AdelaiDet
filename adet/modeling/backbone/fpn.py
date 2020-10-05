@@ -23,6 +23,7 @@ class LastLevelP6P7(nn.Module):
         self.in_feature = in_features
         self.use_relu = activation
         use_bias = norm == ""
+        self.relu_in_norm = 'ReLU' in norm
         self.p6 = Conv2d(in_channels, out_channels, 3, 2, 1, bias=use_bias, norm=get_norm(norm, out_channels))
         self.p7 = Conv2d(out_channels, out_channels, 3, 2, 1, bias=use_bias, norm=get_norm(norm, out_channels))
         for module in [self.p6, self.p7]:
@@ -32,6 +33,8 @@ class LastLevelP6P7(nn.Module):
         p6 = self.p6(x)
         if self.use_relu:
             p6 = F.relu_(p6)
+            p7 = self.p7(p6)
+        elif self.relu_in_norm:
             p7 = self.p7(p6)
         else:
             p7 = self.p7(F.relu(p6))
