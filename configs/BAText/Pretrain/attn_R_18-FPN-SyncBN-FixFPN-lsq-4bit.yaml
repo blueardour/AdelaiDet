@@ -34,7 +34,7 @@ MODEL:
             'proposal_generator.fcos_head.cls_tower',
             'proposal_generator.fcos_head.bbox_tower',
             # TextHead
-            'roi_heads.CRNN'
+            'roi_heads'
            ]
     keyword: ["debug", "dorefa", "lsq"]
     padding_after_quant: True
