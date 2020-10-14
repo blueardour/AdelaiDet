@@ -36,6 +36,7 @@ MODEL:
     keyword: ["debug", "dorefa", "lsq"]
     fm_enable: True 
     wt_enable: True 
+    padding_after_quant: True
     fm_bit: 2.0
     wt_bit: 2.0
     fm_boundary: 1.0
