@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm, get_norm, Conv2d, skip_connect
+from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm, get_norm, Conv2d
 from detectron2.modeling.proposal_generator.build import PROPOSAL_GENERATOR_REGISTRY
 
 from adet.layers import DFConv2d, NaiveGroupNorm
