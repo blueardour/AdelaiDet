@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm, get_norm, Conv2d, skip_connect
+from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm, get_norm, Conv2d
 from detectron2.modeling.proposal_generator.build import PROPOSAL_GENERATOR_REGISTRY
 
 from adet.layers import DFConv2d, NaiveGroupNorm
@@ -183,16 +183,22 @@ class FCOSHead(nn.Module):
                       tower[6*i+j] = nn.Sequential()
             self.add_module('{}_tower'.format(head), nn.Sequential(*tower))
 
-        self.cls_logits = nn.Conv2d(
+        # wrapper first and last layer using Conv2d if QUANTIZATION.policy file is given
+        pf = getattr(getattr(cfg.MODEL, "QUANTIZATION", dict()), "policy", None)
+        if pf in [None, '']:
+            conv_func = nn.Conv2d
+        else:
+            conv_func = Conv2d
+        self.cls_logits = conv_func(
             in_channels, self.num_classes,
             kernel_size=3, stride=1,
             padding=1
         )
-        self.bbox_pred = nn.Conv2d(
+        self.bbox_pred = conv_func(
             in_channels, 4, kernel_size=3,
             stride=1, padding=1
         )
-        self.ctrness = nn.Conv2d(
+        self.ctrness = conv_func(
             in_channels, 1, kernel_size=3,
             stride=1, padding=1
         )
