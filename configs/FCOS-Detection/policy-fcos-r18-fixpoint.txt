@@ -1,0 +1,14 @@
+
+
+on init:
+  by_index: 36 37 38
+  bit: 8
+
+  by_index: 8
+  by_tag: fm
+  enable: False
+
+  by_index: 8
+  by_tag: wt
+  bit: 8
+
