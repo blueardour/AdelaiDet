@@ -4,15 +4,16 @@ MODEL:
   RESNETS:
     DEPTH: 18
     RES2_OUT_CHANNELS: 64
-    NORM: "SyncBN"
+    NORM: "StaticBN"
     STRIDE_IN_1X1: False
   BACKBONE:
     FREEZE_AT: 0
   FPN:
-    NORM: "SyncBN-ReLU"
+    NORM: "StaticBN-ReLU"
     #USE_RELU: True
   FCOS:
-    NORM: "SyncBN"
+    #NORM: "SyncBN"
+    NORM: "StaticBN"
   # open the mix precision if GPU memory not enough. Known issue: fp16 conflicts with SyncBN for multi GPU training
   #fp16: True
   QUANTIZATION:

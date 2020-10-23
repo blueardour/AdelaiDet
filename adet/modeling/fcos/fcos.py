@@ -162,13 +162,9 @@ class FCOSHead(nn.Module):
                     tower.append(nn.GroupNorm(32, in_channels))
                 elif norm == "NaiveGN":
                     tower.append(NaiveGroupNorm(32, in_channels))
-                elif norm == "BN":
+                elif norm in ["BN", "SyncBN", "StaticBN"]:
                     tower.append(ModuleListDial([
-                        nn.BatchNorm2d(in_channels) for _ in range(self.num_levels)
-                    ]))
-                elif norm == "SyncBN":
-                    tower.append(ModuleListDial([
-                        NaiveSyncBatchNorm(in_channels) for _ in range(self.num_levels)
+                        get_norm(norm, in_channels) for _ in range(self.num_levels)
                     ]))
                 else:
                     tower.append(nn.Sequential())
