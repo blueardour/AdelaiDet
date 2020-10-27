@@ -1,23 +1,17 @@
 _BASE_: "Base-CTW1500.yaml"
 MODEL:
-  WEIGHTS: "output/batext/pretrain/attn_R_50-Full_SyncBN-FixFPN/model_final.pth"
+  WEIGHTS: "output/batext/pretrain/attn_R_18-FPN_SyncBN-FixFPN/model_final.pth"
   RESNETS:
-    DEPTH: 50
-    RES2_OUT_CHANNELS: 256
+    DEPTH: 18
+    RES2_OUT_CHANNELS: 64
     NORM: "SyncBN"
     STRIDE_IN_1X1: False
   BACKBONE:
     FREEZE_AT: 0
   FPN:
     NORM: "SyncBN-ReLU"
-    #USE_RELU: True
-  FCOS:
-    NORM: "SyncBN"
-  # turn on for mix precision training
-  #fp16: True
   BATEXT:
     NORM: "SyncBN"
-    RECOGNIZER_NORM: "SyncBN" 
     RECOGNIZER: "attn" 
 SOLVER:
   IMS_PER_BATCH: 8
@@ -27,5 +21,5 @@ SOLVER:
   CHECKPOINT_PERIOD: 10000
 TEST:
   EVAL_PERIOD: 10000
-OUTPUT_DIR: "output/batext/ctw1500/attn_R_50-Full_SyncBN-FixFPN"
+OUTPUT_DIR: "output/batext/ctw1500/attn_R_18-FPN_SyncBN-FixFPN"
 

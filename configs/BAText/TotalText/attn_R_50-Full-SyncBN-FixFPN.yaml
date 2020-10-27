@@ -27,3 +27,4 @@ SOLVER:
 TEST:
   EVAL_PERIOD: 1000
 OUTPUT_DIR: "output/batext/totaltext/attn_R_50-Full_SyncBN-FixFPN"
+
