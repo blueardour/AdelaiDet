@@ -1,14 +1,53 @@
 
 
 on init:
-  by_index: 36 37 38
+  by_index: 36 37 38 # output layer
   bit: 8
+  enable: False
 
-  by_index: 8
-  by_tag: fm
+  by_index: 8 # input layer
+  #by_tag: fm
   enable: False
 
   by_index: 8
   by_tag: wt
   bit: 8
+
+  by_index: all
+  global_buffer: clip_val
+
+on norm:
+  by_index: all
+  enable: True
+  input_index: "clip_val-same"
+  input_scale: 0.22222222222222222222222222222222
+  choice: 'RoundSTE'
+
+  by_index: 8
+  enable: False
+
+  by_index: 28,29,30,31,32
+  input_index: clip_val-28
+
+  by_index: 33,34,35,36,37
+  input_index: clip_val-29
+
+  by_index: 38,39,40,41,42
+  input_index: clip_val-30
+
+  by_index: 43,44,45,46,47
+  input_index: clip_val-31
+
+  by_index: 48,49,50,51,52
+  input_index: clip_val-32
+
+  by_index: 53,54,55,56,57
+  input_index: clip_val-33
+
+  by_index: 58,59,60,61,62
+  input_index: clip_val-34
+
+  by_index: 63,64,65,66,67
+  input_index: clip_val-35
+
 
