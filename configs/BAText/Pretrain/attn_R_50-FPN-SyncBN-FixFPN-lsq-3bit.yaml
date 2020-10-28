@@ -1,20 +1,18 @@
-_BASE_: "Base-FCOS.yaml"
+_BASE_: "Base-Pretrain.yaml"
 MODEL:
-  WEIGHTS: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-lsq-2bit/model_final.pth"
+  WEIGHTS: "output/batext/pretrain/attn_R_50-FPN_SyncBN-FixFPN/model_final.pth"
   RESNETS:
-    DEPTH: 18
-    RES2_OUT_CHANNELS: 64
+    DEPTH: 50
+    RES2_OUT_CHANNELS: 256
     NORM: "SyncBN"
     STRIDE_IN_1X1: False
   BACKBONE:
     FREEZE_AT: 0
   FPN:
     NORM: "SyncBN-ReLU"
-    #USE_RELU: True
-  FCOS:
+  BATEXT:
     NORM: "SyncBN"
-  # open the mix precision if GPU memory not enough
-  #fp16: True
+    RECOGNIZER: "attn" 
   QUANTIZATION:
     scope: [
             'backbone.bottom_up.res2',
@@ -23,6 +21,8 @@ MODEL:
             'backbone.bottom_up.res5',
             # continue for more branch
             # FPN
+            'backbone.fpn_lateral2',
+            'backbone.fpn_output2',
             'backbone.fpn_lateral3',
             'backbone.fpn_output3',
             'backbone.fpn_lateral4',
@@ -30,20 +30,30 @@ MODEL:
             'backbone.fpn_lateral5',
             'backbone.fpn_output5',
             'backbone.top_block',
-            # Head tower
+            # FCOS Head tower
             'proposal_generator.fcos_head.cls_tower',
             'proposal_generator.fcos_head.bbox_tower',
+            # TextHead
+            'roi_heads'
            ]
     keyword: ["debug", "dorefa", "lsq"]
+    padding_after_quant: True
     fm_enable: True 
     wt_enable: True 
-    #padding_after_quant: True
-    fm_bit: 1.0
-    wt_bit: 1.0
+    fm_bit: 3.0
+    wt_bit: 3.0
+    #fm_grad_type: "STE-scale"
+    #wt_grad_type: "STE-scale"
     fm_boundary: 1.0
     wt_boundary: 1.0
     wt_quant_group: 1
     wt_adaptive: "var-mean"
-INPUT:
-  MIN_SIZE_TRAIN: (800,)
-OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-lsq-bin-progressive-pbq"
+SOLVER:
+  IMS_PER_BATCH: 8
+  BASE_LR: 0.01
+  STEPS: (160000, 220000)
+  MAX_ITER: 260000
+  CHECKPOINT_PERIOD: 20000
+TEST:
+  EVAL_PERIOD: 20000
+OUTPUT_DIR: "output/batext/pretrain/attn_R_50-FPN_SyncBN-FixFPN-lsq-3bit"
