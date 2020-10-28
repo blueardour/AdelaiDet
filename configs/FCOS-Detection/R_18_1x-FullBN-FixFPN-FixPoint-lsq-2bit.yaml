@@ -5,14 +5,14 @@ MODEL:
   RESNETS:
     DEPTH: 18
     RES2_OUT_CHANNELS: 64
-    NORM: "SyncBN"
+    NORM: "BN"
     STRIDE_IN_1X1: False
   BACKBONE:
     FREEZE_AT: 0
   FPN:
-    NORM: "SyncBN-ReLU"
+    NORM: "BN-ReLU"
   FCOS:
-    NORM: "SyncBN"
+    NORM: "BN"
   QUANTIZATION:
     scope: [
             # backbone
@@ -37,4 +37,4 @@ SOLVER:
   IMS_PER_BATCH: 4
   BASE_LR: 0.001  # Note that RetinaNet uses a different default learning rate
   MAX_ITER: 10000
-OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-2bit"
+OUTPUT_DIR: "output/fcos/R_18_1x-FullBN-FixFPN-FixPoint-lsq-2bit"
