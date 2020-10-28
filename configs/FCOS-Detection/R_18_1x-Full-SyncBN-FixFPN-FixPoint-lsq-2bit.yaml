@@ -32,4 +32,8 @@ MODEL:
     policy: 'configs/FCOS-Detection/policy-fcos-r18-fixpoint.txt'
 INPUT:
   MIN_SIZE_TRAIN: (800,)
+SOLVER:
+  IMS_PER_BATCH: 2
+  BASE_LR: 0.0001  # Note that RetinaNet uses a different default learning rate
+  MAX_ITER: 5000
 OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-2bit"
