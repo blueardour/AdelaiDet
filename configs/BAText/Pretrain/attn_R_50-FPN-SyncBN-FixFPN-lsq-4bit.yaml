@@ -1,6 +1,6 @@
 _BASE_: "Base-Pretrain.yaml"
 MODEL:
-  WEIGHTS: "output/batext/pretrain/attn_R_50-FPN_SyncBN-FixFPN/model_final.pth"
+  WEIGHTS: "output/batext/pretrain/attn_R_50-FPN_SyncBN-FixFPN-RD2/model_final.pth"
   RESNETS:
     DEPTH: 50
     RES2_OUT_CHANNELS: 256
