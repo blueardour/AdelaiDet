@@ -6,10 +6,10 @@ on init:
 
   by_index: 36
   bit: 8
-  enable: False
+  #enable: False
 
-  by_index: 36 37 38 8
-  stable: 2
+  #by_index: 36 37 38 8
+  #stable: 2
 
   by_index: 8 # input layer
   by_tag: fm
