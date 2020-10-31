@@ -170,7 +170,7 @@ class FCOSHead(nn.Module):
                     tower.append(get_norm(norm, in_channels))
                 else:
                     tower.append(nn.Sequential())
-                tower.append(nn.ReLU())
+                tower.append(nn.ReLU(inplace=True))
                 if skip == "conv-wise" or ('conv-wise' in skip and head in skip):
                     tower[-3] = skip_connect([tower[-3], tower[-2]])
                     tower[-2] = nn.Sequential()
@@ -240,7 +240,7 @@ class FCOSHead(nn.Module):
             if self.scales is not None:
                 reg = self.scales[l](reg)
             # Note that we use relu, as in the improved FCOS, instead of exp.
-            bbox_reg.append(F.relu(reg))
+            bbox_reg.append(F.relu_(reg))
             if top_module is not None:
                 top_feats.append(top_module(bbox_tower))
         return logits, bbox_reg, ctrness, top_feats, bbox_towers
