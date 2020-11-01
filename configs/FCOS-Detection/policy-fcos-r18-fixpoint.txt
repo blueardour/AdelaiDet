@@ -1,16 +1,6 @@
 
 
 on init:
-  by_index: 37 38 # output layer
-  bit: 8
-
-  by_index: 36
-  bit: 8
-  #enable: False
-
-  #by_index: 36 37 38 8
-  #stable: 2
-
   by_index: 8 # input layer
   by_tag: fm
   enable: False
@@ -18,6 +8,15 @@ on init:
   by_index: 8
   by_tag: wt
   bit: 8
+  adaptive: 'none'
+
+  by_index: 36 37 38 # output layer
+  bit: 8
+  adaptive: 'none'
+
+  by_index: 36 37 38 8
+  stable: 10
+  correlate: 0.8
 
   #by_index: all
   #global_buffer: clip_val

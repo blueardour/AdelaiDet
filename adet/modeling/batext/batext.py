@@ -224,7 +224,7 @@ class FCOSHead(nn.Module):
                     ]))
                 else:
                     tower.append(nn.Sequential())
-                tower.append(nn.ReLU())
+                tower.append(nn.ReLU(inplace=True))
             self.add_module('{}_tower'.format(head),
                             nn.Sequential(*tower))
 
