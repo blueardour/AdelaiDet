@@ -1,9 +1,9 @@
 _BASE_: "Base-Pretrain.yaml"
 MODEL:
-  WEIGHTS: "output/batext/pretrain/attn_R_50-FPN_SyncBN-FixFPN-RD2/model_final.pth"
+  WEIGHTS: "output/batext/pretrain/attn_R_18-FPN_SyncBN-FixFPN-lsq-2bit/model_final.pth"
   RESNETS:
-    DEPTH: 50
-    RES2_OUT_CHANNELS: 256
+    DEPTH: 18
+    RES2_OUT_CHANNELS: 64
     NORM: "SyncBN"
     STRIDE_IN_1X1: False
   BACKBONE:
@@ -37,11 +37,11 @@ MODEL:
             'roi_heads'
            ]
     keyword: ["debug", "dorefa", "lsq"]
-    padding_after_quant: True
+    #padding_after_quant: True
     fm_enable: True 
     wt_enable: True 
-    fm_bit: 3.0
-    wt_bit: 3.0
+    fm_bit: 1.0
+    wt_bit: 1.0
     #fm_grad_type: "STE-scale"
     #wt_grad_type: "STE-scale"
     fm_boundary: 1.0
@@ -56,4 +56,5 @@ SOLVER:
   CHECKPOINT_PERIOD: 5000
 TEST:
   EVAL_PERIOD: 20000
-OUTPUT_DIR: "output/batext/pretrain/attn_R_50-FPN_SyncBN-FixFPN-lsq-3bit"
+OUTPUT_DIR: "output/batext/pretrain/attn_R_18-FPN_SyncBN-FixFPN-lsq-bin-progressive-pbq"
+
