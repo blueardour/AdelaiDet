@@ -6,13 +6,18 @@ on init:
   enable: False
 
   by_index: 8
-  by_tag: wt
-  bit: 16
-  adaptive: 'none'
+  bit: 8
+  #adaptive: 'none'
+  #adaptive_restore: True
 
   by_index: 36 37 38 # output layer
-  bit: 16
+  by_tag: fm
+  enable: False
+
+  by_index: 36 37 38 # output layer
+  bit: 8
   adaptive: 'none'
+  #adaptive_restore: True
 
   by_index: 36 37 38 8
   stable: 10
