@@ -1,6 +1,6 @@
 _BASE_: "Base-FCOS.yaml"
 MODEL:
-  WEIGHTS: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-lsq-2bit/model_final.pth"
+  WEIGHTS: "output/fcos/R_18_1x-Full-SyncBN-FixFPN/model_final.pth"
   PIXEL_MEAN: [104.0, 116.0, 124.0]
   #PIXEL_MEAN: [0.0, 0.0, 0.0]
   RESNETS:
@@ -21,7 +21,7 @@ MODEL:
             # Head
             'proposal_generator',
            ]
-    keyword: ["debug", "dorefa", "lsq"]
+    keyword: ["debug", "dorefa", "lsq", "adaptive-restore"]
     fm_enable: True 
     wt_enable: True 
     padding_after_quant: True
@@ -34,9 +34,4 @@ MODEL:
     policy: 'configs/FCOS-Detection/policy-fcos-r18-fixpoint.txt'
 INPUT:
   MIN_SIZE_TRAIN: (800,)
-SOLVER:
-  IMS_PER_BATCH: 4
-  BASE_LR: 0.001  # Note that RetinaNet uses a different default learning rate
-  STEPS: (120000,)
-  MAX_ITER: 240000
-OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-2bit-16bit-test"
+OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M2F16L16"

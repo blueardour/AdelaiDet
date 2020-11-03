@@ -89,7 +89,7 @@ class Attention(nn.Module):
         output = torch.cat((embedded, attn_applied.squeeze(1)), 1)
         output = self.attn_combine(output).unsqueeze(0) # (1, n, hidden_size)
 
-        output = F.relu(output)
+        output = F.relu_(output)
         output, hidden = self.gru(output, hidden) # (1, n, hidden_size)
 
         output = F.log_softmax(self.out(output[0]), dim=1)  # (n, hidden_size)
