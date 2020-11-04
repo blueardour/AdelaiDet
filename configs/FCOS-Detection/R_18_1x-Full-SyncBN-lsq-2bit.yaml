@@ -1,6 +1,5 @@
 _BASE_: "Base-FCOS.yaml"
 MODEL:
-  EXTRA_WEIGHTS: "output/fcos/R_18_1x-Full_BN/model_final.pth"
   WEIGHTS: "weights/det-resnet18/lsq_best_model_a2w2.pth"
   RESNETS:
     DEPTH: 18
@@ -38,6 +37,7 @@ MODEL:
     keyword: ["debug", "dorefa", "lsq"]
     fm_enable: True 
     wt_enable: True 
+    padding_after_quant: True
     fm_bit: 2.0
     wt_bit: 2.0
     fm_boundary: 1.0

@@ -156,7 +156,7 @@ class FCOSHead(nn.Module):
                 tower.append(conv_func(
                     in_channels, in_channels,
                     kernel_size=3, stride=1,
-                    padding=1, bias=True
+                    padding=1, bias=norm is None
                 ))
                 if norm == "GN":
                     tower.append(nn.GroupNorm(32, in_channels))
@@ -214,7 +214,8 @@ class FCOSHead(nn.Module):
             for l in modules.modules():
                 if isinstance(l, nn.Conv2d):
                     torch.nn.init.normal_(l.weight, std=0.01)
-                    torch.nn.init.constant_(l.bias, 0)
+                    if l.bias is not None:
+                       torch.nn.init.constant_(l.bias, 0)
 
         # initialize the bias for focal loss
         prior_prob = cfg.MODEL.FCOS.PRIOR_PROB
