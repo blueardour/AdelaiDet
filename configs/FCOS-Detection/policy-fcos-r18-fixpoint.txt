@@ -14,17 +14,31 @@ on init:
   adaptive: 'none'
 
   by_index: 36 37 38 # output layer
-  by_tag: fm wt
-  #enable: False
+  #by_tag: wt
   enable: True
+  #enable: False
+  bit: 8
 
   by_index: 36 37 38 # output layer
   bit: 8
   adaptive: 'none'
 
+  #by_index: 36
+  #by_tag: wt
+  #quant_group: 80
+
+  #by_index: 37
+  #by_tag: wt
+  #quant_group: 4
+
+  #by_index: 36 37 38 # output layer
+  #bit: 16
+  #adaptive: 'none'
+
   by_index: 36 37 38 8
   stable: 10
   correlate: 0.8
+  adaptive: 'none'
 
   by_index: all
   global_buffer: clip_val
