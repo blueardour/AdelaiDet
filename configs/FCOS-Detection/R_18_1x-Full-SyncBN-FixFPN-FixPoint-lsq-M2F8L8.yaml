@@ -33,4 +33,6 @@ MODEL:
     policy: 'configs/FCOS-Detection/policy-fcos-r18-fixpoint.txt'
 INPUT:
   MIN_SIZE_TRAIN: (800,)
+SOLVER:
+  BASE_LR: 0.002  # decrease by 5
 OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M2F8L8"
