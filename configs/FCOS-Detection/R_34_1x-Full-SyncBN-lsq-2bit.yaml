@@ -2,7 +2,8 @@ _BASE_: "Base-FCOS.yaml"
 MODEL:
   WEIGHTS: "output/fcos/R_50_1x-Full-SyncBN/model_final.pth"
   RESNETS:
-    DEPTH: 50
+    DEPTH: 34
+    RES2_OUT_CHANNELS: 64
     NORM: "SyncBN"
     STRIDE_IN_1X1: False
   BACKBONE:
@@ -45,4 +46,4 @@ MODEL:
     wt_adaptive: "var-mean"
 INPUT:
   MIN_SIZE_TRAIN: (800,)
-OUTPUT_DIR: "output/fcos/R_50_1x-Full-SyncBN-lsq-2bit"
+OUTPUT_DIR: "output/fcos/R_34_1x-Full-SyncBN-lsq-2bit"
