@@ -1,25 +1,19 @@
 
 on init:
-  #by_index: all # input layer
-  #enable: False
-
   by_index: 8 # input layer
   by_tag: fm
   enable: False
 
   by_index: 8
   by_tag: wt
-  bit: 8
   enable: True
-  adaptive: 'none'
 
-  by_index: 36 37 38 # output layer
+  by_index: 69 70 71 # output layer
   enable: True
-  bit: 8
-  adaptive: 'none'
 
-  by_index: 36 37 38 8
+  by_index: 69 70 71 8
   stable: 10
   correlate: 0.8
   adaptive: 'none'
+  bit: 8
 
