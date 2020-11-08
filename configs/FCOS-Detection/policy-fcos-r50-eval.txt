@@ -1,0 +1,7 @@
+
+on init:
+  by_index: 8 # input layer
+  enable: False
+
+  by_index: 69 70 71 # output layer
+  enable: False
