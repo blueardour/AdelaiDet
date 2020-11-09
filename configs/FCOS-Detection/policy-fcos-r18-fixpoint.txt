@@ -40,8 +40,8 @@ on init:
   correlate: 0.8
   adaptive: 'none'
 
-  by_index: all
-  global_buffer: clip_val
+  #by_index: all
+  #global_buffer: clip_val
 
 on norm:
   #by_index: all

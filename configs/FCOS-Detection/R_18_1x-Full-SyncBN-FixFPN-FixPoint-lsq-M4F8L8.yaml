@@ -34,5 +34,5 @@ MODEL:
 INPUT:
   MIN_SIZE_TRAIN: (800,)
 SOLVER:
-  BASE_LR: 0.002  # decrease by 5
-OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M4F8L8"
+  BASE_LR: 0.001  # decrease by 10
+OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M4F8L8-RD2"
