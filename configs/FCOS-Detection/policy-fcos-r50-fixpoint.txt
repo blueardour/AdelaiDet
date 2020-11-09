@@ -8,10 +8,10 @@ on init:
   by_tag: wt
   enable: True
 
-  by_index: 52 53 54 # output layer
+  by_index: 69 70 71 # output layer
   enable: True
 
-  by_index: 52 53 54 8
+  by_index: 69 70 71 8
   stable: 10
   correlate: 0.8
   adaptive: 'none'

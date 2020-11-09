@@ -23,8 +23,8 @@ MODEL:
     fm_enable: True 
     wt_enable: True 
     padding_after_quant: True
-    fm_bit: 2.0
-    wt_bit: 2.0
+    fm_bit: 3.0
+    wt_bit: 3.0
     fm_boundary: 1.0
     wt_boundary: 1.0
     wt_quant_group: 1
@@ -34,4 +34,4 @@ INPUT:
   MIN_SIZE_TRAIN: (800,)
 SOLVER:
   BASE_LR: 0.001  # decrease by 10
-OUTPUT_DIR: "output/fcos/R_50_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M2F8L8"
+OUTPUT_DIR: "output/fcos/R_50_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M3F8L8"
