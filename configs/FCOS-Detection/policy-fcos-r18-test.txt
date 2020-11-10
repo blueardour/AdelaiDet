@@ -1,8 +1,5 @@
 
 on init:
-  #by_index: all # input layer
-  #enable: False
-
   by_index: 8 # input layer
   by_tag: fm
   enable: False

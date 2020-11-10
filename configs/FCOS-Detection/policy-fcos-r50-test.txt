@@ -27,96 +27,96 @@ on norm:
   input_scale: 0.2222222222222
   choice: 'RoundSTE'
 
-  by_index: 44 45 46 47 48
-  input_index: clip_val-44
+  by_index: 61 62 63 64 65
+  input_index: clip_val-61
 
-  by_index: 49 50 51 52 53
-  input_index: clip_val-45
+  by_index: 66 67 68 69 70
+  input_index: clip_val-62
 
-  by_index: 54 55 56 57 58
-  input_index: clip_val-46
+  by_index: 71 72 73 74 75
+  input_index: clip_val-63
 
-  by_index: 59 60 61 62 63
-  input_index: clip_val-47
+  by_index: 76 77 78 79 80
+  input_index: clip_val-64
 
-  by_index: 64 65 66 67 68
-  input_index: clip_val-48
+  by_index: 81 82 83 84 85
+  input_index: clip_val-65
 
-  by_index: 69 70 71 72 73
-  input_index: clip_val-49
+  by_index: 86 87 88 89 90
+  input_index: clip_val-66
 
-  by_index: 74 75 76 77 78
-  input_index: clip_val-50
+  by_index: 91 92 93 94 95
+  input_index: clip_val-67
 
-  by_index: 79 80 81 82 83
-  input_index: clip_val-51
+  by_index: 96 97 98 99 100
+  input_index: clip_val-68
 
 on eltwise:
   by_index: all
   enable: True
 
   by_index: 0
-  x_index: clip_val-10-norm
-  y_index: clip_val-8-norm
+  x_index: clip_val-12-norm
+  y_index: clip_val-9-norm
 
   by_index: 1
-  x_index: clip_val-12-norm
+  x_index: clip_val-15-norm
   y_index: alpha-0-eltwise
 
   by_index: 2
-  x_index: clip_val-14-norm
+  x_index: clip_val-18-norm
   y_index: alpha-1-eltwise
 
   by_index: 3
-  x_index: clip_val-17-norm
-  y_index: clip_val-15-norm
+  x_index: clip_val-19-norm
+  y_index: clip_val-22-norm
 
   by_index: 4
-  x_index: clip_val-19-norm
+  x_index: clip_val-25-norm
   y_index: alpha-3-eltwise
 
   by_index: 5
-  x_index: clip_val-21-norm
+  x_index: clip_val-28-norm
   y_index: alpha-4-eltwise
 
   by_index: 6
-  x_index: clip_val-23-norm
+  x_index: clip_val-31-norm
   y_index: alpha-5-eltwise
 
   by_index: 7
-  x_index: clip_val-26-norm
-  y_index: clip_val-24-norm
+  x_index: clip_val-35-norm
+  y_index: clip_val-32-norm
 
   by_index: 8
-  x_index: clip_val-28-norm
+  x_index: clip_val-38-norm
   y_index: alpha-7-eltwise
 
   by_index: 9
-  x_index: clip_val-30-norm
+  x_index: clip_val-41-norm
   y_index: alpha-8-eltwise
 
   by_index: 10
-  x_index: clip_val-32-norm
+  x_index: clip_val-44-norm
   y_index: alpha-9-eltwise
 
   by_index: 11
-  x_index: clip_val-34-norm
+  x_index: clip_val-47-norm
   y_index: alpha-10-eltwise
 
   by_index: 12
-  x_index: clip_val-36-norm
+  x_index: clip_val-50-norm
   y_index: alpha-11-eltwise
 
   by_index: 13
-  x_index: clip_val-39-norm
-  y_index: clip_val-37-norm
+  x_index: clip_val-54-norm
+  y_index: clip_val-51-norm
 
   by_index: 14
-  x_index: clip_val-41-norm
+  x_index: clip_val-57-norm
   y_index: alpha-13-eltwise
 
   by_index: 15
-  x_index: clip_val-43-norm
+  x_index: clip_val-60-norm
   y_index: alpha-14-eltwise
 
   by_index: 16

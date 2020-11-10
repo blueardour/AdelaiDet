@@ -5,17 +5,14 @@ MODEL:
   RESNETS:
     DEPTH: 18
     RES2_OUT_CHANNELS: 64
-    NORM: "NO-ReLU"
-    #NORM: "SyncBN"
+    NORM: "SyncBN"
     STRIDE_IN_1X1: False
   BACKBONE:
     FREEZE_AT: 0
   FPN:
-    NORM: "NO-ReLU"
-    #NORM: "SyncBN-ReLU"
+    NORM: "SyncBN-ReLU"
   BATEXT:
-    NORM: "NO"
-    #NORM: "SyncBN"
+    NORM: "SyncBN"
     RECOGNIZER: "attn" 
 SOLVER:
   IMS_PER_BATCH: 8
@@ -23,10 +20,6 @@ SOLVER:
   STEPS: (160000, 220000)
   MAX_ITER: 260000
   CHECKPOINT_PERIOD: 20000
-#INPUT:
-#  MIN_SIZE_TEST: 800
-#  MAX_SIZE_TEST: 1400
 TEST:
   EVAL_PERIOD: 20000
 OUTPUT_DIR: "output/batext/pretrain/attn_R_18-FPN_SyncBN-FixFPN-speed"
-

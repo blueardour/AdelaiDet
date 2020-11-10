@@ -1,6 +1,6 @@
-_BASE_: "Base-Pretrain.yaml"
+_BASE_: "Base-CTW1500.yaml"
 MODEL:
-  WEIGHTS: "output/batext/pretrain/attn_R_18-FPN_SyncBN-FixFPN-lsq-2bit/model_final.pth"
+  WEIGHTS: "output/batext/pretrain/attn_R_18-FPN_SyncBN-FixFPN-lsq-4bit/model_final.pth"
   RESNETS:
     DEPTH: 18
     RES2_OUT_CHANNELS: 64
@@ -36,13 +36,12 @@ MODEL:
             # TextHead
             'roi_heads'
            ]
-    keyword: ["debug", "dorefa", "lsq", "probe"]
+    keyword: ["debug", "dorefa", "lsq", 'nop-conv']
     padding_after_quant: True
-    probe_list: ['before-quant']
     fm_enable: True 
     wt_enable: True 
-    fm_bit: 2.0
-    wt_bit: 2.0
+    fm_bit: 4.0
+    wt_bit: 4.0
     #fm_grad_type: "STE-scale"
     #wt_grad_type: "STE-scale"
     fm_boundary: 1.0
@@ -51,11 +50,10 @@ MODEL:
     wt_adaptive: "var-mean"
 SOLVER:
   IMS_PER_BATCH: 8
-  BASE_LR: 0.01
-  STEPS: (160000, 220000)
-  MAX_ITER: 260000
-  CHECKPOINT_PERIOD: 20000
+  BASE_LR: 0.001
+  STEPS: (80000,)
+  MAX_ITER: 120000
+  CHECKPOINT_PERIOD: 10000
 TEST:
-  EVAL_PERIOD: 20000
-OUTPUT_DIR: "output/batext/pretrain/attn_R_18-FPN_SyncBN-FixFPN-lsq-2bit-debug"
-
+  EVAL_PERIOD: 10000
+OUTPUT_DIR: "output/batext/ctw1500/attn_R_18-FPN_SyncBN-FixFPN-lsq-4bit-speed"
