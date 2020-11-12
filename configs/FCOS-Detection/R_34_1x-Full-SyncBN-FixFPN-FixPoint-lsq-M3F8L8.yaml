@@ -1,0 +1,38 @@
+_BASE_: "Base-FCOS.yaml"
+MODEL:
+  WEIGHTS: "output/fcos/R_34_1x-Full-SyncBN-FixFPN/model_final.pth"
+  PIXEL_MEAN: [104.0, 116.0, 124.0]
+  RESNETS:
+    DEPTH: 34
+    RES2_OUT_CHANNELS: 64
+    NORM: "SyncBN"
+    STRIDE_IN_1X1: False
+  BACKBONE:
+    FREEZE_AT: 0
+  FPN:
+    NORM: "SyncBN-ReLU"
+  FCOS:
+    NORM: "SyncBN"
+  QUANTIZATION:
+    scope: [
+            # backbone
+            'backbone',
+            # Head
+            'proposal_generator',
+           ]
+    keyword: ["debug", "dorefa", "lsq"]
+    fm_enable: True 
+    wt_enable: True 
+    padding_after_quant: True
+    fm_bit: 3.0
+    wt_bit: 3.0
+    fm_boundary: 1.0
+    wt_boundary: 1.0
+    wt_quant_group: 1
+    wt_adaptive: "var-mean"
+    policy: 'configs/FCOS-Detection/policy-fcos-r34-fixpoint.txt'
+INPUT:
+  MIN_SIZE_TRAIN: (800,)
+SOLVER:
+  BASE_LR: 0.001  # decrease by 10
+OUTPUT_DIR: "output/fcos/R_34_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M3F8L8"
