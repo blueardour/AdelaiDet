@@ -34,7 +34,8 @@ MODEL:
             'proposal_generator.fcos_head.cls_tower',
             'proposal_generator.fcos_head.bbox_tower',
            ]
-    keyword: ["debug", "dorefa", "lsq"]
+    keyword: ["debug", "dorefa", "lsq", "probe"]
+    probe_list: ['cls_tower.1.', 'cls_tower.4.', 'cls_tower.7.', 'cls_tower.10.', 'bbox_tower.1.', 'bbox_tower.4.', 'bbox_tower.7.', 'bbox_tower.10.']
     fm_enable: True 
     wt_enable: True 
     padding_after_quant: True
