@@ -64,7 +64,7 @@ class FCOS(nn.Module):
     def forward(self, images, features, gt_instances=None, top_module=None):
         """
         Arguments:
-            images (list[Tensor] or ImageList): imaees to be procesqed
+            images (list[Tensor] or ImageList): images to be procesqed
             targets (list[BoxList]): ground-truth boxes present in the image (optional)
 
         Returns:
