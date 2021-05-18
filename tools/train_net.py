@@ -46,8 +46,50 @@ from adet.evaluation import TextEvaluator
 class Trainer(DefaultTrainer):
     """
     This is the same Trainer except that we rewrite the
-    `build_train_loader` method.
+    `build_train_loader`/`resume_or_load` method.
     """
+    def resume_or_load(self, resume=True):
+        if not isinstance(self.checkpointer, AdetCheckpointer):
+            # support loading a few other backbones
+            self.checkpointer = AdetCheckpointer(
+                self.model,
+                self.cfg.OUTPUT_DIR,
+                optimizer=self.optimizer,
+                scheduler=self.scheduler,
+            )
+        super().resume_or_load(resume=resume)
+
+    def train_loop(self, start_iter: int, max_iter: int):
+        """
+        Args:
+            start_iter, max_iter (int): See docs above
+        """
+        logger = logging.getLogger("adet.trainer")
+        logger.info("Starting training from iteration {}".format(start_iter))
+
+        self.iter = self.start_iter = start_iter
+        self.max_iter = max_iter
+
+        with EventStorage(start_iter) as self.storage:
+            self.before_train()
+            for self.iter in range(start_iter, max_iter):
+                self.before_step()
+                self.run_step()
+                self.after_step()
+            self.after_train()
+
+    def train(self):
+        """
+        Run training.
+
+        Returns:
+            OrderedDict of results, if evaluation is enabled. Otherwise None.
+        """
+        self.train_loop(self.start_iter, self.max_iter)
+        if hasattr(self, "_last_eval_results") and comm.is_main_process():
+            verify_results(self.cfg, self._last_eval_results)
+            return self._last_eval_results
+
     @classmethod
     def build_train_loader(cls, cfg):
         """
@@ -58,7 +100,7 @@ class Trainer(DefaultTrainer):
         DatasetMapper, which adds categorical labels as a semantic mask.
         """
         mapper = DatasetMapperWithBasis(cfg, True)
-        return build_detection_train_loader(cfg, mapper)
+        return build_detection_train_loader(cfg, mapper=mapper)
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):

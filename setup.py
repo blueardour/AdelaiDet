@@ -79,9 +79,10 @@ setup(
         "matplotlib",
         "tqdm>4.29.0",
         "tensorboard",
-        "python-Levenshtein",
+        "rapidfuzz",
         "Polygon3",
         "shapely",
+        "scikit-image"
     ],
     extras_require={"all": ["psutil"]},
     ext_modules=get_extensions(),

@@ -33,6 +33,12 @@ _C.MODEL.FCOS.NORM = "GN"  # Support GN or none
 _C.MODEL.FCOS.SKIP = "none"  # Employ Skip connection for improve quantization performance
 _C.MODEL.FCOS.USE_SCALE = True
 
+# The options for the quality of box prediction
+# It can be "ctrness" (as described in FCOS paper) or "iou"
+# Using "iou" here generally has ~0.4 better AP on COCO
+# Note that for compatibility, we still use the term "ctrness" in the code
+_C.MODEL.FCOS.BOX_QUALITY = "ctrness"
+
 # Multiply centerness before threshold
 # This will affect the final performance by about 0.05 AP but save some time
 _C.MODEL.FCOS.THRESH_WITH_CTR = False
@@ -40,6 +46,14 @@ _C.MODEL.FCOS.THRESH_WITH_CTR = False
 # Focal loss parameters
 _C.MODEL.FCOS.LOSS_ALPHA = 0.25
 _C.MODEL.FCOS.LOSS_GAMMA = 2.0
+
+# The normalizer of the classification loss
+# The normalizer can be "fg" (normalized by the number of the foreground samples),
+# "moving_fg" (normalized by the MOVING number of the foreground samples),
+# or "all" (normalized by the number of all samples)
+_C.MODEL.FCOS.LOSS_NORMALIZER_CLS = "fg"
+_C.MODEL.FCOS.LOSS_WEIGHT_CLS = 1.0
+
 _C.MODEL.FCOS.SIZES_OF_INTEREST = [64, 128, 256, 512]
 _C.MODEL.FCOS.USE_RELU = True
 _C.MODEL.FCOS.USE_DEFORMABLE = False
@@ -209,7 +223,13 @@ _C.MODEL.CONDINST = CN()
 
 # the downsampling ratio of the final instance masks to the input image
 _C.MODEL.CONDINST.MASK_OUT_STRIDE = 4
+_C.MODEL.CONDINST.BOTTOM_PIXELS_REMOVED = -1
+
+# if not -1, we only compute the mask loss for MAX_PROPOSALS random proposals PER GPU
 _C.MODEL.CONDINST.MAX_PROPOSALS = -1
+# if not -1, we only compute the mask loss for top `TOPK_PROPOSALS_PER_IM` proposals
+# PER IMAGE in terms of their detection scores
+_C.MODEL.CONDINST.TOPK_PROPOSALS_PER_IM = -1
 
 _C.MODEL.CONDINST.MASK_HEAD = CN()
 _C.MODEL.CONDINST.MASK_HEAD.CHANNELS = 8
@@ -224,6 +244,19 @@ _C.MODEL.CONDINST.MASK_BRANCH.CHANNELS = 128
 _C.MODEL.CONDINST.MASK_BRANCH.NORM = "BN"
 _C.MODEL.CONDINST.MASK_BRANCH.NUM_CONVS = 4
 _C.MODEL.CONDINST.MASK_BRANCH.SEMANTIC_LOSS_ON = False
+
+# The options for BoxInst, which can train the instance segmentation model with box annotations only
+# Please refer to the paper https://arxiv.org/abs/2012.02310
+_C.MODEL.BOXINST = CN()
+# Whether to enable BoxInst
+_C.MODEL.BOXINST.ENABLED = False
+_C.MODEL.BOXINST.BOTTOM_PIXELS_REMOVED = 10
+
+_C.MODEL.BOXINST.PAIRWISE = CN()
+_C.MODEL.BOXINST.PAIRWISE.SIZE = 3
+_C.MODEL.BOXINST.PAIRWISE.DILATION = 2
+_C.MODEL.BOXINST.PAIRWISE.WARMUP_ITERS = 10000
+_C.MODEL.BOXINST.PAIRWISE.COLOR_THRESH = 0.3
 
 # ---------------------------------------------------------------------------- #
 # TOP Module Options
@@ -247,10 +280,12 @@ _C.MODEL.BiFPN.NUM_REPEATS = 6
 # Options: "" (no norm), "GN"
 _C.MODEL.BiFPN.NORM = ""
 
-
-# ---------------------------------------------------------------------------#
-# SOLO Instance parameters
+# ---------------------------------------------------------------------------- #
+# SOLOv2 Options
+# ---------------------------------------------------------------------------- #
 _C.MODEL.SOLOV2 = CN()
+
+# Instance hyper-parameters
 _C.MODEL.SOLOV2.INSTANCE_IN_FEATURES = ["p2", "p3", "p4", "p5", "p6"]
 _C.MODEL.SOLOV2.FPN_INSTANCE_STRIDES = [8, 8, 16, 32, 32]
 _C.MODEL.SOLOV2.FPN_SCALE_RANGES = ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048))
@@ -263,15 +298,15 @@ _C.MODEL.SOLOV2.NUM_INSTANCE_CONVS = 4
 _C.MODEL.SOLOV2.USE_DCN_IN_INSTANCE = False
 _C.MODEL.SOLOV2.TYPE_DCN = 'DCN'
 _C.MODEL.SOLOV2.NUM_GRIDS = [40, 36, 24, 16, 12]
-# Number of foreground classes
+# Number of foreground classes.
 _C.MODEL.SOLOV2.NUM_CLASSES = 80
 _C.MODEL.SOLOV2.NUM_KERNELS = 256
 _C.MODEL.SOLOV2.NORM = "GN"
 _C.MODEL.SOLOV2.USE_COORD_CONV = True
 _C.MODEL.SOLOV2.PRIOR_PROB = 0.01
 
-# Mask parameters
-# Channel size for the mask tower
+# Mask hyper-parameters.
+# Channel size for the mask tower.
 _C.MODEL.SOLOV2.MASK_IN_FEATURES = ["p2", "p3", "p4", "p5"]
 _C.MODEL.SOLOV2.MASK_IN_CHANNELS = 256
 _C.MODEL.SOLOV2.MASK_CHANNELS = 128
@@ -283,20 +318,16 @@ _C.MODEL.SOLOV2.SCORE_THR = 0.1
 _C.MODEL.SOLOV2.UPDATE_THR = 0.05
 _C.MODEL.SOLOV2.MASK_THR = 0.5
 _C.MODEL.SOLOV2.MAX_PER_IMG = 100
-# matrix / mask
+# NMS type: matrix OR mask.
 _C.MODEL.SOLOV2.NMS_TYPE = "matrix"
-# gaussian / linear
+# Matrix NMS kernel type: gaussian OR linear.
 _C.MODEL.SOLOV2.NMS_KERNEL = "gaussian"
 _C.MODEL.SOLOV2.NMS_SIGMA = 2
 
+# Loss cfg.
 _C.MODEL.SOLOV2.LOSS = CN()
 _C.MODEL.SOLOV2.LOSS.FOCAL_USE_SIGMOID = True
 _C.MODEL.SOLOV2.LOSS.FOCAL_ALPHA = 0.25
 _C.MODEL.SOLOV2.LOSS.FOCAL_GAMMA = 2.0
 _C.MODEL.SOLOV2.LOSS.FOCAL_WEIGHT = 1.0
 _C.MODEL.SOLOV2.LOSS.DICE_WEIGHT = 3.0
-
-# Optional Params.
-_C.MODEL.SOLOV2.FLAG_SEMI = False
-_C.MODEL.SOLOV2.RATIO_SEMI = 0.1
-# ---------------------------------------------------------------------------#

@@ -8,7 +8,7 @@ from detectron2.structures import Instances, Boxes
 from detectron2.utils.comm import get_world_size
 from fvcore.nn import sigmoid_focal_loss_jit
 
-from adet.utils.comm import reduce_sum
+from adet.utils.comm import reduce_sum, reduce_mean, compute_ious
 from adet.layers import ml_nms, IOULoss
 
 
@@ -67,6 +67,7 @@ class FCOSOutputs(nn.Module):
         self.post_nms_topk_test = cfg.MODEL.FCOS.POST_NMS_TOPK_TEST
         self.nms_thresh = cfg.MODEL.FCOS.NMS_TH
         self.thresh_with_ctr = cfg.MODEL.FCOS.THRESH_WITH_CTR
+        self.box_quality = cfg.MODEL.FCOS.BOX_QUALITY
 
         self.num_classes = cfg.MODEL.FCOS.NUM_CLASSES
         self.strides = cfg.MODEL.FCOS.FPN_STRIDES
@@ -79,6 +80,17 @@ class FCOSOutputs(nn.Module):
             prev_size = s
         soi.append([prev_size, INF])
         self.sizes_of_interest = soi
+
+        self.loss_normalizer_cls = cfg.MODEL.FCOS.LOSS_NORMALIZER_CLS
+        assert self.loss_normalizer_cls in ("moving_fg", "fg", "all"), \
+            'MODEL.FCOS.CLS_LOSS_NORMALIZER can only be "moving_fg", "fg", or "all"'
+
+        # For an explanation, please refer to
+        # https://github.com/facebookresearch/detectron2/blob/ea8b17914fc9a5b7d82a46ccc72e7cf6272b40e4/detectron2/modeling/meta_arch/retinanet.py#L148
+        self.moving_num_fg = 100  # initialize with any reasonable #fg that's not too small
+        self.moving_num_fg_momentum = 0.9
+
+        self.loss_weight_cls = cfg.MODEL.FCOS.LOSS_WEIGHT_CLS
 
     def _transpose(self, training_targets, num_loc_list):
         '''
@@ -313,16 +325,18 @@ class FCOSOutputs(nn.Module):
         return self.fcos_losses(instances)
 
     def fcos_losses(self, instances):
+        losses, extras = {}, {}
+
+        # 1. compute the cls loss
         num_classes = instances.logits_pred.size(1)
         assert num_classes == self.num_classes
 
         labels = instances.labels.flatten()
 
         pos_inds = torch.nonzero(labels != num_classes).squeeze(1)
-        num_pos_local = pos_inds.numel()
-        num_gpus = get_world_size()
-        total_num_pos = reduce_sum(pos_inds.new_tensor([num_pos_local])).item()
-        num_pos_avg = max(total_num_pos / num_gpus, 1.0)
+
+        num_pos_local = torch.ones_like(pos_inds).sum()
+        num_pos_avg = max(reduce_mean(num_pos_local).item(), 1.0)
 
         # prepare one_hot
         class_target = torch.zeros_like(instances.logits_pred)
@@ -333,42 +347,59 @@ class FCOSOutputs(nn.Module):
             class_target,
             alpha=self.focal_loss_alpha,
             gamma=self.focal_loss_gamma,
-            reduction="sum",
-        ) / num_pos_avg
+            reduction="sum"
+        )
 
+        if self.loss_normalizer_cls == "moving_fg":
+            self.moving_num_fg = self.moving_num_fg_momentum * self.moving_num_fg + (
+                    1 - self.moving_num_fg_momentum
+            ) * num_pos_avg
+            class_loss = class_loss / self.moving_num_fg
+        elif self.loss_normalizer_cls == "fg":
+            class_loss = class_loss / num_pos_avg
+        else:
+            num_samples_local = torch.ones_like(labels).sum()
+            num_samples_avg = max(reduce_mean(num_samples_local).item(), 1.0)
+            class_loss = class_loss / num_samples_avg
+
+        losses["loss_fcos_cls"] = class_loss * self.loss_weight_cls
+
+        # 2. compute the box regression and quality loss
         instances = instances[pos_inds]
         instances.pos_inds = pos_inds
 
-        ctrness_targets = compute_ctrness_targets(instances.reg_targets)
-        ctrness_targets_sum = ctrness_targets.sum()
-        loss_denorm = max(reduce_sum(ctrness_targets_sum).item() / num_gpus, 1e-6)
-        instances.gt_ctrs = ctrness_targets
+        ious, gious = compute_ious(instances.reg_pred, instances.reg_targets)
 
-        if pos_inds.numel() > 0:
-            reg_loss = self.loc_loss_func(
-                instances.reg_pred,
-                instances.reg_targets,
-                ctrness_targets
-            ) / loss_denorm
+        if self.box_quality == "ctrness":
+            ctrness_targets = compute_ctrness_targets(instances.reg_targets)
+            instances.gt_ctrs = ctrness_targets
+            
+            ctrness_targets_sum = ctrness_targets.sum()
+            loss_denorm = max(reduce_mean(ctrness_targets_sum).item(), 1e-6)
+            extras["loss_denorm"] = loss_denorm
+
+            reg_loss = self.loc_loss_func(ious, gious, ctrness_targets) / loss_denorm
+            losses["loss_fcos_loc"] = reg_loss
 
             ctrness_loss = F.binary_cross_entropy_with_logits(
-                instances.ctrness_pred,
-                ctrness_targets,
+                instances.ctrness_pred, ctrness_targets,
                 reduction="sum"
             ) / num_pos_avg
-        else:
-            reg_loss = instances.reg_pred.sum() * 0
-            ctrness_loss = instances.ctrness_pred.sum() * 0
+            losses["loss_fcos_ctr"] = ctrness_loss
+        elif self.box_quality == "iou":
+            reg_loss = self.loc_loss_func(ious, gious) / num_pos_avg
+            losses["loss_fcos_loc"] = reg_loss
 
-        losses = {
-            "loss_fcos_cls": class_loss,
-            "loss_fcos_loc": reg_loss,
-            "loss_fcos_ctr": ctrness_loss
-        }
-        extras = {
-            "instances": instances,
-            "loss_denorm": loss_denorm
-        }
+            quality_loss = F.binary_cross_entropy_with_logits(
+                instances.ctrness_pred, ious.detach(),
+                reduction="sum"
+            ) / num_pos_avg
+            losses["loss_fcos_iou"] = quality_loss
+        else:
+            raise NotImplementedError
+
+        extras["instances"] = instances
+
         return extras, losses
 
     def predict_proposals(
@@ -445,7 +476,7 @@ class FCOSOutputs(nn.Module):
         if self.thresh_with_ctr:
             logits_pred = logits_pred * ctrness_pred[:, :, None]
         candidate_inds = logits_pred > self.pre_nms_thresh
-        pre_nms_top_n = candidate_inds.view(N, -1).sum(1)
+        pre_nms_top_n = candidate_inds.reshape(N, -1).sum(1)
         pre_nms_top_n = pre_nms_top_n.clamp(max=self.pre_nms_topk)
 
         if not self.thresh_with_ctr:

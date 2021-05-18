@@ -3,12 +3,18 @@
     FCOS: Fully Convolutional One-Stage Object Detection;
     Zhi Tian, Chunhua Shen, Hao Chen, and Tong He;
     In: Proc. Int. Conf. Computer Vision (ICCV), 2019.
-    arXiv preprint arXiv:1904.01355 
+[arXiv preprint arXiv:1904.01355](https://arxiv.org/abs/1904.01355)
+    
+    FCOS: A Simple and Strong Anchor-free Object Detector;
+    Zhi Tian, Chunhua Shen, Hao Chen, and Tong He;
+    IEEE T. Pattern Analysis and Machine Intelligence (TPAMI), 2021.
+[arXiv preprint arXiv:2006.09214](https://arxiv.org/abs/2006.09214)
+    
 
-[[`Paper`](https://arxiv.org/abs/1904.01355)] [[`BibTeX`](#citing-fcos)]
+[`BibTeX`](#citing-fcos)
 
 # Installation & Quick Start
-No special setup needed. The [default instruction](../../README.md#Installation) is fine.
+No special setup needed. The [default instruction](../../README.md#Installation) would work.
 
 ## Models
 ### COCO Object Detecton Baselines with [FCOS](https://arxiv.org/abs/1904.01355)
@@ -22,7 +28,17 @@ Name | inf. time | box AP | box AP (test-dev) | download
 [FCOS_MS_X_101_64x4d_2x](MS_X_101_64x4d_2x.yaml) | 6.1 FPS | 44.7 | [44.8](https://gist.github.com/tianzhi0549/b68f6500ec24e6b263c12c345a7b5c7b) | [model](https://cloudstor.aarnet.edu.au/plus/s/XOLUCzqKYckNII7/download)
 [FCOS_MS_X_101_32x8d_dcnv2_2x](MS_X_101_32x8d_2x_dcnv2.yaml) | 4.6 FPS | 46.6 | [46.6](https://gist.github.com/tianzhi0549/316e8feaa17bf0341e2effa485fb41c0) | [model](https://cloudstor.aarnet.edu.au/plus/s/TDsnYK8OXDTrafF/download)
 
-*Except for FCOS_R_50_1x, all other models are trained with multi-scale data augmentation.*
+The following models use IoU (instead of "center-ness") to predict the box quality (setting `MODEL.FCOS.BOX_QUALITY = "iou"`).
+
+Name | inf. time | box AP | download
+--- |:---:|:---:|:---:
+[FCOS_R_50_1x_iou](R_50_1x_iou.yaml) | 16 FPS | 39.4 | [model](https://cloudstor.aarnet.edu.au/plus/s/LE6u0koeu0YlalU/download)
+[FCOS_MS_R_50_2x_iou](MS_R_50_2x_iou.yaml) | 16 FPS | 41.5 | [model](https://cloudstor.aarnet.edu.au/plus/s/Qx7HeA0XCr2y6UW/download)
+[FCOS_MS_R_101_2x_iou](MS_R_101_2x_iou.yaml) | 12 FPS | 43.5 | [model](https://cloudstor.aarnet.edu.au/plus/s/JJhntIKrvaS51et/download)
+[FCOS_MS_X_101_32x8d_2x_iou](MS_X_101_32x8d_2x_iou.yaml) | 6.6 FPS | 44.5 | [model](https://cloudstor.aarnet.edu.au/plus/s/iYAmR0pDwIme3ac/download)
+[FCOS_MS_X_101_32x8d_2x_dcnv2_iou](MS_X_101_32x8d_2x_dcnv2_iou.yaml) | 4.6 FPS | 47.4 | [model](https://cloudstor.aarnet.edu.au/plus/s/Ols6N8tarxUVEdF/download)
+
+*"MS": the models are trained with multi-scale data augmentation.*
 
 ### FCOS Real-time Models
 
@@ -42,6 +58,11 @@ Name | inf. time | box AP | box AP (test-dev) | download
 
 *Inference time is measured on a NVIDIA 1080Ti with batch size 1. Real-time models use shorter side 512 for inference.*
 
+*Disclaimer:*
+
+If the number of foreground samples is small or unstable, please set [`MODEL.FCOS.LOSS_NORMALIZER_CLS`](https://github.com/aim-uofa/AdelaiDet/blob/586bf2d6d4a4d662956203675a108f79d7d0f3ce/adet/config/defaults.py#L47) to `"moving_fg"`, which is more stable than normalizing the loss with the number of foreground samples in this case.
+
+
 # Citing FCOS
 If you use FCOS in your research or wish to refer to the baseline results, please use the following BibTeX entries.
 ```BibTeX
@@ -50,5 +71,13 @@ If you use FCOS in your research or wish to refer to the baseline results, pleas
   author    =  {Tian, Zhi and Shen, Chunhua and Chen, Hao and He, Tong},
   booktitle =  {Proc. Int. Conf. Computer Vision (ICCV)},
   year      =  {2019}
+}
+```
+```BibTeX
+@article{tian2021fcos,
+  title   =  {{FCOS}: A Simple and Strong Anchor-free Object Detector},
+  author  =  {Tian, Zhi and Shen, Chunhua and Chen, Hao and He, Tong},
+  journal =  {IEEE T. Pattern Analysis and Machine Intelligence (TPAMI)},
+  year    =  {2021}
 }
 ```

@@ -1,9 +1,8 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-import copy
+# -*- coding: utf-8 -*-
 import logging
 import math
-from scipy import ndimage
 from typing import List
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -17,6 +16,7 @@ from detectron2.structures import Boxes, ImageList, Instances
 from detectron2.utils.logger import log_first_n
 from fvcore.nn import sigmoid_focal_loss_jit
 
+<<<<<<< HEAD
 from .utils import imrescale
 from .loss import dice_loss, FocalLoss
 from detectron2.layers import Conv2d, get_norm
@@ -39,12 +39,24 @@ class ModuleListDial(nn.ModuleList):
             self.cur_position = 0
         return result
 
+=======
+from .utils import imrescale, center_of_mass, point_nms, mask_nms, matrix_nms
+from .loss import dice_loss, FocalLoss
+
+__all__ = ["SOLOv2"]
+
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
 
 @META_ARCH_REGISTRY.register()
 class SOLOv2(nn.Module):
     """
+<<<<<<< HEAD
     SOLOv2 model. Creates FPN backbone, instance branch for class-specific kernels,
     mask branch for class-agnostic masks.
+=======
+    SOLOv2 model. Creates FPN backbone, instance branch for kernels and categories prediction,
+    mask branch for unified mask features.
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
     Calculates and applies proper losses to class and masks.
     """
 
@@ -101,6 +113,7 @@ class SOLOv2(nn.Module):
         self.focal_loss_alpha = cfg.MODEL.SOLOV2.LOSS.FOCAL_ALPHA
         self.focal_loss_gamma = cfg.MODEL.SOLOV2.LOSS.FOCAL_GAMMA
         self.focal_loss_weight = cfg.MODEL.SOLOV2.LOSS.FOCAL_WEIGHT
+<<<<<<< HEAD
         # self.focal_loss = FocalLoss(use_sigmoid=cfg.MODEL.SOLOV2.LOSS.FOCAL_USE_SIGMOID,
         #                            gamma=cfg.MODEL.SOLOV2.LOSS.FOCAL_GAMMA,
         #                            alpha=cfg.MODEL.SOLOV2.LOSS.FOCAL_ALPHA,
@@ -109,6 +122,8 @@ class SOLOv2(nn.Module):
         # optional params.
         self.flag_semi = cfg.MODEL.SOLOV2.FLAG_SEMI
         self.ratio_semi = cfg.MODEL.SOLOV2.RATIO_SEMI
+=======
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
 
         # image transform
         pixel_mean = torch.Tensor(cfg.MODEL.PIXEL_MEAN).to(self.device).view(3, 1, 1)
@@ -164,18 +179,25 @@ class SOLOv2(nn.Module):
             return losses
         else:
             # point nms.
+<<<<<<< HEAD
             cate_pred = [self.point_nms(cate_p.sigmoid(), kernel=2).permute(0, 2, 3, 1)
+=======
+            cate_pred = [point_nms(cate_p.sigmoid(), kernel=2).permute(0, 2, 3, 1)
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                          for cate_p in cate_pred]
             # do inference for results.
             results = self.inference(cate_pred, kernel_pred, mask_pred, images.image_sizes, batched_inputs)
             return results
 
+<<<<<<< HEAD
     @torch.no_grad()
     def point_nms(self, heat, kernel=2):
         # kernel must be 2
         hmax = F.max_pool2d(heat, (kernel, kernel), stride=1, padding=1)
         keep = (hmax[:, :, :-1, :-1] == heat).float()
         return heat * keep
+=======
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
 
     def preprocess_image(self, batched_inputs):
         """
@@ -235,11 +257,16 @@ class SOLOv2(nn.Module):
                 continue
             gt_bboxes = gt_bboxes_raw[hit_indices]
             gt_labels = gt_labels_raw[hit_indices]
+<<<<<<< HEAD
             gt_masks = gt_masks_raw[hit_indices.cpu().numpy(), ...].cpu().numpy().astype('uint8')
+=======
+            gt_masks = gt_masks_raw[hit_indices, ...]
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
 
             half_ws = 0.5 * (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * self.sigma
             half_hs = 0.5 * (gt_bboxes[:, 3] - gt_bboxes[:, 1]) * self.sigma
 
+<<<<<<< HEAD
             output_stride = 4
             for seg_mask, gt_label, half_h, half_w in zip(gt_masks, gt_labels, half_hs, half_ws):
                 if seg_mask.sum() == 0:
@@ -247,6 +274,22 @@ class SOLOv2(nn.Module):
                 # mass center
                 upsampled_size = (mask_feat_size[0] * 4, mask_feat_size[1] * 4)
                 center_h, center_w = ndimage.measurements.center_of_mass(seg_mask)
+=======
+            # mass center
+            center_ws, center_hs = center_of_mass(gt_masks)
+            valid_mask_flags = gt_masks.sum(dim=-1).sum(dim=-1) > 0
+
+            output_stride = 4
+            gt_masks = gt_masks.permute(1, 2, 0).to(dtype=torch.uint8).cpu().numpy()
+            gt_masks = imrescale(gt_masks, scale=1./output_stride)
+            if len(gt_masks.shape) == 2:
+                gt_masks = gt_masks[..., None]
+            gt_masks = torch.from_numpy(gt_masks).to(dtype=torch.uint8, device=device).permute(2, 0, 1)
+            for seg_mask, gt_label, half_h, half_w, center_h, center_w, valid_mask_flag in zip(gt_masks, gt_labels, half_hs, half_ws, center_hs, center_ws, valid_mask_flags):
+                if not valid_mask_flag:
+                    continue
+                upsampled_size = (mask_feat_size[0] * 4, mask_feat_size[1] * 4)
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                 coord_w = int((center_w / upsampled_size[1]) // (1. / num_grid))
                 coord_h = int((center_h / upsampled_size[0]) // (1. / num_grid))
 
@@ -262,8 +305,11 @@ class SOLOv2(nn.Module):
                 right = min(right_box, coord_w+1)
 
                 cate_label[top:(down+1), left:(right+1)] = gt_label
+<<<<<<< HEAD
                 seg_mask = imrescale(seg_mask, scale=1. / output_stride)
                 seg_mask = torch.Tensor(seg_mask)
+=======
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                 for i in range(top, down+1):
                     for j in range(left, right+1):
                         label = int(i * num_grid + j)
@@ -274,8 +320,15 @@ class SOLOv2(nn.Module):
                         ins_label.append(cur_ins_label)
                         ins_ind_label[label] = True
                         grid_order.append(label)
+<<<<<<< HEAD
             ins_label = torch.stack(ins_label, 0).to(device=device)
 
+=======
+            if len(ins_label) == 0:
+                ins_label = torch.zeros([0, mask_feat_size[0], mask_feat_size[1]], dtype=torch.uint8, device=device)
+            else:
+                ins_label = torch.stack(ins_label, 0)
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
             ins_label_list.append(ins_label)
             cate_label_list.append(cate_label)
             ins_ind_label_list.append(ins_ind_label)
@@ -332,6 +385,7 @@ class SOLOv2(nn.Module):
             input = torch.sigmoid(input)
             loss_ins.append(dice_loss(input, target))
 
+<<<<<<< HEAD
         a = 1
         if self.flag_semi:
             loss_ins = torch.cat(loss_ins)
@@ -341,6 +395,9 @@ class SOLOv2(nn.Module):
             loss_ins_mean = loss_ins[index_sampled].mean()
         else:
             loss_ins_mean = torch.cat(loss_ins).mean()
+=======
+        loss_ins_mean = torch.cat(loss_ins).mean()
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
         loss_ins = loss_ins_mean * self.ins_loss_weight
 
         # cate
@@ -358,13 +415,19 @@ class SOLOv2(nn.Module):
         flatten_cate_preds = torch.cat(cate_preds)
 
         # prepare one_hot
+<<<<<<< HEAD
 
         #loss_cate = self.focal_loss(flatten_cate_preds, flatten_cate_labels_oh, avg_factor=num_ins + 1)
+=======
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
         pos_inds = torch.nonzero(flatten_cate_labels != self.num_classes).squeeze(1)
 
         flatten_cate_labels_oh = torch.zeros_like(flatten_cate_preds)
         flatten_cate_labels_oh[pos_inds, flatten_cate_labels[pos_inds]] = 1
+<<<<<<< HEAD
         #flatten_cate_labels_oh[pos_inds, flatten_cate_labels[pos_inds].long()] = 1.
+=======
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
 
         loss_cate = self.focal_loss_weight * sigmoid_focal_loss_jit(flatten_cate_preds, flatten_cate_labels_oh,
                                     gamma=self.focal_loss_gamma,
@@ -381,6 +444,7 @@ class SOLOv2(nn.Module):
                 feats[3],
                 F.interpolate(feats[4], size=feats[3].shape[-2:], mode='bilinear'))
 
+<<<<<<< HEAD
     @staticmethod
     def matrix_nms(cate_labels, seg_masks, sum_masks, cate_scores, sigma=2.0, kernel='gaussian'):
         n_samples = len(cate_labels)
@@ -459,6 +523,10 @@ class SOLOv2(nn.Module):
         Returns:
             results (List[Instances]): a list of #images elements.
         """
+=======
+
+    def inference(self, pred_cates, pred_kernels, pred_masks, cur_sizes, images):
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
         assert len(pred_cates) == len(pred_kernels)
 
         results = []
@@ -488,6 +556,7 @@ class SOLOv2(nn.Module):
     def inference_single_image(
             self, cate_preds, kernel_preds, seg_preds, cur_size, ori_size
     ):
+<<<<<<< HEAD
         """
         Single-image inference. Return bounding-box detection results by thresholding
         on scores and applying non-maximum suppression (NMS).
@@ -507,6 +576,8 @@ class SOLOv2(nn.Module):
             Same as `inference`, but for only one image.
         """
 
+=======
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
         # overall info.
         h, w = cur_size
         f_h, f_w = seg_preds.size()[-2:]
@@ -564,7 +635,11 @@ class SOLOv2(nn.Module):
         cate_scores = cate_scores[keep]
         cate_labels = cate_labels[keep]
 
+<<<<<<< HEAD
         # mask scoring.
+=======
+        # maskness.
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
         seg_scores = (seg_preds * seg_masks.float()).sum((1, 2)) / sum_masks
         cate_scores *= seg_scores
 
@@ -580,12 +655,20 @@ class SOLOv2(nn.Module):
 
         if self.nms_type == "matrix":
             # matrix nms & filter.
+<<<<<<< HEAD
             cate_scores = self.matrix_nms(cate_labels, seg_masks, sum_masks, cate_scores,
+=======
+            cate_scores = matrix_nms(cate_labels, seg_masks, sum_masks, cate_scores,
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                                           sigma=self.nms_sigma, kernel=self.nms_kernel)
             keep = cate_scores >= self.update_threshold
         elif self.nms_type == "mask":
             # original mask nms.
+<<<<<<< HEAD
             keep = self.mask_nms(cate_labels, seg_masks, sum_masks, cate_scores,
+=======
+            keep = mask_nms(cate_labels, seg_masks, sum_masks, cate_scores,
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                                  nms_thr=self.mask_threshold)
         else:
             raise NotImplementedError
@@ -676,6 +759,7 @@ class SOLOv2InsHead(nn.Module):
             tower = []
             num_convs, use_deformable, use_coord = head_configs[head]
             for i in range(num_convs):
+<<<<<<< HEAD
                 if use_deformable and i == num_convs - 1:
                     if self.type_dcn == "DCN":
                         conv_func = DFConv2d
@@ -684,6 +768,9 @@ class SOLOv2InsHead(nn.Module):
                 else:
                     conv_func = Conv2d
 
+=======
+                conv_func = nn.Conv2d
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                 if i == 0:
                     if use_coord:
                         chn = self.instance_in_channels + 2
@@ -699,6 +786,7 @@ class SOLOv2InsHead(nn.Module):
                 ))
                 if norm == "GN":
                     tower.append(nn.GroupNorm(32, self.instance_channels))
+<<<<<<< HEAD
                 elif norm == "BN" or norm == "SyncBN":
                     # very likey to stuck when using ModuleListDial during training, unknown reason
                     tower.append(ModuleListDial([
@@ -706,6 +794,8 @@ class SOLOv2InsHead(nn.Module):
                     ]))
                 else:
                     tower.append(nn.Sequential())
+=======
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                 tower.append(nn.ReLU(inplace=True))
             self.add_module('{}_tower'.format(head),
                             nn.Sequential(*tower))
@@ -770,7 +860,10 @@ class SOLOv2InsHead(nn.Module):
             # cate
             cate_feat = self.cate_tower(cate_feat)
             cate_pred.append(self.cate_pred(cate_feat))
+<<<<<<< HEAD
 
+=======
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
         return cate_pred, kernel_pred
 
 
@@ -797,15 +890,24 @@ class SOLOv2MaskHead(nn.Module):
             convs_per_level = nn.Sequential()
             if i == 0:
                 conv_tower = list()
+<<<<<<< HEAD
                 conv_tower.append(Conv2d(
+=======
+                conv_tower.append(nn.Conv2d(
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                     self.mask_in_channels, self.mask_channels,
                     kernel_size=3, stride=1,
                     padding=1, bias=norm is None
                 ))
+<<<<<<< HEAD
                 if norm in ["GN", "BN", "SyncBN"]:
                     conv_tower.append(get_norm(norm, self.mask_channels))
                 else:
                     conv_tower.append(nn.Sequential())
+=======
+                if norm == "GN":
+                    conv_tower.append(nn.GroupNorm(32, self.mask_channels))
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                 conv_tower.append(nn.ReLU(inplace=False))
                 convs_per_level.add_module('conv' + str(i), nn.Sequential(*conv_tower))
                 self.convs_all_levels.append(convs_per_level)
@@ -815,15 +917,24 @@ class SOLOv2MaskHead(nn.Module):
                 if j == 0:
                     chn = self.mask_in_channels + 2 if i == 3 else self.mask_in_channels
                     conv_tower = list()
+<<<<<<< HEAD
                     conv_tower.append(Conv2d(
+=======
+                    conv_tower.append(nn.Conv2d(
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                         chn, self.mask_channels,
                         kernel_size=3, stride=1,
                         padding=1, bias=norm is None
                     ))
+<<<<<<< HEAD
                     if norm in ["GN", "BN", "SyncBN"]:
                         conv_tower.append(get_norm(norm, self.mask_channels))
                     else:
                         conv_tower.append(nn.Sequential())
+=======
+                    if norm == "GN":
+                        conv_tower.append(nn.GroupNorm(32, self.mask_channels))
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                     conv_tower.append(nn.ReLU(inplace=False))
                     convs_per_level.add_module('conv' + str(j), nn.Sequential(*conv_tower))
                     upsample_tower = nn.Upsample(
@@ -831,17 +942,27 @@ class SOLOv2MaskHead(nn.Module):
                     convs_per_level.add_module(
                         'upsample' + str(j), upsample_tower)
                     continue
+<<<<<<< HEAD
 
                 conv_tower = list()
                 conv_tower.append(Conv2d(
+=======
+                conv_tower = list()
+                conv_tower.append(nn.Conv2d(
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                     self.mask_channels, self.mask_channels,
                     kernel_size=3, stride=1,
                     padding=1, bias=norm is None
                 ))
+<<<<<<< HEAD
                 if norm in ["GN", "BN", "SyncBN"]:
                     conv_tower.append(get_norm(norm, self.mask_channels))
                 else:
                     conv_tower.append(nn.Sequential())
+=======
+                if norm == "GN":
+                    conv_tower.append(nn.GroupNorm(32, self.mask_channels))
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
                 conv_tower.append(nn.ReLU(inplace=False))
                 convs_per_level.add_module('conv' + str(j), nn.Sequential(*conv_tower))
                 upsample_tower = nn.Upsample(
@@ -855,7 +976,11 @@ class SOLOv2MaskHead(nn.Module):
                 self.mask_channels, self.num_masks,
                 kernel_size=1, stride=1,
                 padding=0, bias=norm is None),
+<<<<<<< HEAD
             get_norm(norm, self.num_masks),
+=======
+            nn.GroupNorm(32, self.num_masks),
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
             nn.ReLU(inplace=True)
         )
 
@@ -894,6 +1019,10 @@ class SOLOv2MaskHead(nn.Module):
             feature_add_all_level += self.convs_all_levels[i](mask_feat)
 
         mask_pred = self.conv_pred(feature_add_all_level)
+<<<<<<< HEAD
 
         return mask_pred
 
+=======
+        return mask_pred
+>>>>>>> a0a6adb2dd54a7c523cdfcf86239cdbc3132b592
