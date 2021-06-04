@@ -39,6 +39,7 @@ dist/
 .python-version
 
 # project dirs
+/datasets/multi_task
 /datasets/coco
 /datasets/lvis
 /datasets/pic
