@@ -1,6 +1,6 @@
 _BASE_: "Base-FCOS.yaml"
 MODEL:
-  WEIGHTS: "output/fcos/R_18_1x-Full-SyncBN-FixFPN/model_final.pth"
+  WEIGHTS: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M2F8L8/model_final.pth"
   PIXEL_MEAN: [104.0, 116.0, 124.0]
   RESNETS:
     DEPTH: 18
@@ -30,9 +30,9 @@ MODEL:
     wt_boundary: 1.0
     wt_quant_group: 1
     wt_adaptive: "var-mean"
-    policy: 'configs/FCOS-Detection/policy-fcos-r18-fixpoint.txt'
+    policy: 'configs/FCOS-Detection/policy-fcos-r18-test.txt'
 INPUT:
   MIN_SIZE_TRAIN: (800,)
 SOLVER:
   BASE_LR: 0.001  # decrease by 10
-OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M2F8L8"
+OUTPUT_DIR: "output/fcos/R_18_1x-Full_SyncBN-FixFPN-FixPoint-lsq-M2F8L8-eval"
