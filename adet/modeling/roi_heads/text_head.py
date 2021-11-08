@@ -150,6 +150,7 @@ class TextHead(nn.Module):
         self.top_size     = cfg.MODEL.TOP_MODULE.DIM
         self.coordconv    = cfg.MODEL.BATEXT.USE_COORDCONV
         self.aet          = cfg.MODEL.BATEXT.USE_AET 
+        norm              = cfg.MODEL.BATEXT.NORM
         # fmt: on
 
         self.pooler = TopPooler(
@@ -162,7 +163,7 @@ class TextHead(nn.Module):
             assign_crit="bezier")
 
         conv_block = conv_with_kaiming_uniform(
-            norm="BN", activation=True)
+            norm=norm, activation=True)
         tower = []
         for i in range(num_conv):
             tower.append(

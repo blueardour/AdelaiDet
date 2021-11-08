@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm
+from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm, get_norm, Conv2d
 from detectron2.modeling.proposal_generator.build import PROPOSAL_GENERATOR_REGISTRY
 
 from adet.layers import DFConv2d, NaiveGroupNorm
@@ -139,6 +139,7 @@ class FCOSHead(nn.Module):
                         "share": (cfg.MODEL.FCOS.NUM_SHARE_CONVS,
                                   False)}
         norm = None if cfg.MODEL.FCOS.NORM == "none" else cfg.MODEL.FCOS.NORM
+        skip = getattr(cfg.MODEL.FCOS, 'SKIP', 'none')
         self.num_levels = len(input_shape)
 
         in_channels = [s.channels for s in input_shape]
@@ -154,38 +155,51 @@ class FCOSHead(nn.Module):
                 if use_deformable and i == num_convs - 1:
                     conv_func = DFConv2d
                 else:
-                    conv_func = nn.Conv2d
+                    conv_func = Conv2d
                 tower.append(conv_func(
                     in_channels, in_channels,
                     kernel_size=3, stride=1,
-                    padding=1, bias=True
+                    padding=1, bias=norm is None
                 ))
                 if norm == "GN":
                     tower.append(nn.GroupNorm(32, in_channels))
                 elif norm == "NaiveGN":
                     tower.append(NaiveGroupNorm(32, in_channels))
-                elif norm == "BN":
+                elif norm in ["BN", "SyncBN"]:
                     tower.append(ModuleListDial([
-                        nn.BatchNorm2d(in_channels) for _ in range(self.num_levels)
+                        get_norm(norm, in_channels) for _ in range(self.num_levels)
                     ]))
-                elif norm == "SyncBN":
-                    tower.append(ModuleListDial([
-                        NaiveSyncBatchNorm(in_channels) for _ in range(self.num_levels)
-                    ]))
-                tower.append(nn.ReLU())
-            self.add_module('{}_tower'.format(head),
-                            nn.Sequential(*tower))
+                elif 'shared' in norm:
+                    tower.append(get_norm(norm, in_channels))
+                else:
+                    tower.append(nn.Sequential())
+                tower.append(nn.ReLU(inplace=True))
+                if skip == "conv-wise" or ('conv-wise' in skip and head in skip):
+                    tower[-3] = skip_connect([tower[-3], tower[-2]])
+                    tower[-2] = nn.Sequential()
+            if skip == 'block-wise' or ('block-wise' in skip and head in skip):
+                for i in range(num_convs // 2):
+                  tower[6*i] = skip_connect(tower[6*i:6*i+5])
+                  for j in range(1, 5):
+                      tower[6*i+j] = nn.Sequential()
+            self.add_module('{}_tower'.format(head), nn.Sequential(*tower))
 
-        self.cls_logits = nn.Conv2d(
+        # wrapper first and last layer using Conv2d if QUANTIZATION.policy file is given
+        pf = getattr(getattr(cfg.MODEL, "QUANTIZATION", dict()), "policy", None)
+        if pf in [None, '']:
+            conv_func = nn.Conv2d
+        else:
+            conv_func = Conv2d
+        self.cls_logits = conv_func(
             in_channels, self.num_classes,
             kernel_size=3, stride=1,
             padding=1
         )
-        self.bbox_pred = nn.Conv2d(
+        self.bbox_pred = conv_func(
             in_channels, 4, kernel_size=3,
             stride=1, padding=1
         )
-        self.ctrness = nn.Conv2d(
+        self.ctrness = conv_func(
             in_channels, 1, kernel_size=3,
             stride=1, padding=1
         )
@@ -203,7 +217,8 @@ class FCOSHead(nn.Module):
             for l in modules.modules():
                 if isinstance(l, nn.Conv2d):
                     torch.nn.init.normal_(l.weight, std=0.01)
-                    torch.nn.init.constant_(l.bias, 0)
+                    if l.bias is not None:
+                       torch.nn.init.constant_(l.bias, 0)
 
         # initialize the bias for focal loss
         prior_prob = cfg.MODEL.FCOS.PRIOR_PROB
@@ -229,7 +244,7 @@ class FCOSHead(nn.Module):
             if self.scales is not None:
                 reg = self.scales[l](reg)
             # Note that we use relu, as in the improved FCOS, instead of exp.
-            bbox_reg.append(F.relu(reg))
+            bbox_reg.append(F.relu_(reg))
             if top_module is not None:
                 top_feats.append(top_module(bbox_tower))
         return logits, bbox_reg, ctrness, top_feats, bbox_towers

@@ -1,0 +1,13 @@
+
+on init:
+  by_index: 8 # input layer
+  by_tag: fm
+  enable: False
+
+  by_index: 36 37 38 8
+  stable: 10
+  correlate: 0.8
+  adaptive: 'none'
+  num_levels: 256
+  level_num: 256
+

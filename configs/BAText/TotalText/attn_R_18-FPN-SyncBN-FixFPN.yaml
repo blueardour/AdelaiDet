@@ -1,0 +1,24 @@
+_BASE_: "Base-TotalText.yaml"
+MODEL:
+  WEIGHTS: "output/batext/pretrain/attn_R_18-FPN_SyncBN-FixFPN/model_final.pth"
+  RESNETS:
+    DEPTH: 18
+    RES2_OUT_CHANNELS: 64
+    NORM: "SyncBN"
+    STRIDE_IN_1X1: False
+  BACKBONE:
+    FREEZE_AT: 0
+  FPN:
+    NORM: "SyncBN-ReLU"
+  BATEXT:
+    NORM: "SyncBN"
+    RECOGNIZER: "attn" 
+SOLVER:
+  IMS_PER_BATCH: 8
+  BASE_LR: 0.001
+  MAX_ITER: 5000
+  CHECKPOINT_PERIOD: 1000
+TEST:
+  EVAL_PERIOD: 1000
+OUTPUT_DIR: "output/batext/totaltext/attn_R_18-FPN_SyncBN-FixFPN"
+

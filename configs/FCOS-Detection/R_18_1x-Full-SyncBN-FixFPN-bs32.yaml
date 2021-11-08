@@ -1,0 +1,25 @@
+_BASE_: "Base-FCOS.yaml"
+MODEL:
+  WEIGHTS: "weights/det-resnet18/resnet18-5c106cde.pth"
+  RESNETS:
+    DEPTH: 18
+    RES2_OUT_CHANNELS: 64
+    NORM: "SyncBN"
+    STRIDE_IN_1X1: False
+  BACKBONE:
+    FREEZE_AT: 0
+  FPN:
+    NORM: "SyncBN-ReLU"
+    #USE_RELU: True
+  FCOS:
+    NORM: "SyncBN"
+  # open the mix precision if GPU memory not enough. Known issue: fp16 conflicts with SyncBN for multi GPU training
+  #fp16: True
+SOLVER:
+  IMS_PER_BATCH: 32
+  BASE_LR: 0.02  # Note that RetinaNet uses a different default learning rate
+  STEPS: (30000, 40000)
+  MAX_ITER: 45000
+INPUT:
+  MIN_SIZE_TRAIN: (800,)
+OUTPUT_DIR: "output/fcos/R_18_1x-Full-SyncBN-FixFPN-bs32"

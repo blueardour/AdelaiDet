@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from detectron2.layers import Conv2d, get_norm
 from detectron2.layers import ShapeSpec, batched_nms, cat, paste_masks_in_image
 from detectron2.modeling.anchor_generator import DefaultAnchorGenerator
 from detectron2.modeling.backbone import build_backbone
@@ -21,6 +22,17 @@ from .loss import dice_loss, FocalLoss
 
 __all__ = ["SOLOv2"]
 
+class ModuleListDial(nn.ModuleList):
+    def __init__(self, modules=None):
+        super(ModuleListDial, self).__init__(modules)
+        self.cur_position = 0
+
+    def forward(self, x):
+        result = self[self.cur_position](x)
+        self.cur_position += 1
+        if self.cur_position >= len(self):
+            self.cur_position = 0
+        return result
 
 @META_ARCH_REGISTRY.register()
 class SOLOv2(nn.Module):
@@ -545,7 +557,7 @@ class SOLOv2InsHead(nn.Module):
             tower = []
             num_convs, use_deformable, use_coord = head_configs[head]
             for i in range(num_convs):
-                conv_func = nn.Conv2d
+                conv_func = Conv2d
                 if i == 0:
                     if use_coord:
                         chn = self.instance_in_channels + 2
@@ -561,15 +573,21 @@ class SOLOv2InsHead(nn.Module):
                 ))
                 if norm == "GN":
                     tower.append(nn.GroupNorm(32, self.instance_channels))
+                elif norm == "BN" or norm == "SyncBN":
+                    tower.append(ModuleListDial([
+                        get_norm(norm, self.instance_channels) for _ in range(self.num_levels)
+                    ]))
+                else:
+                    tower.append(nn.Sequential())
                 tower.append(nn.ReLU(inplace=True))
             self.add_module('{}_tower'.format(head),
                             nn.Sequential(*tower))
 
-        self.cate_pred = nn.Conv2d(
+        self.cate_pred = Conv2d(
             self.instance_channels, self.num_classes,
             kernel_size=3, stride=1, padding=1
         )
-        self.kernel_pred = nn.Conv2d(
+        self.kernel_pred = Conv2d(
             self.instance_channels, self.num_kernels,
             kernel_size=3, stride=1, padding=1
         )
@@ -651,13 +669,15 @@ class SOLOv2MaskHead(nn.Module):
             convs_per_level = nn.Sequential()
             if i == 0:
                 conv_tower = list()
-                conv_tower.append(nn.Conv2d(
+                conv_tower.append(Conv2d(
                     self.mask_in_channels, self.mask_channels,
                     kernel_size=3, stride=1,
                     padding=1, bias=norm is None
                 ))
-                if norm == "GN":
-                    conv_tower.append(nn.GroupNorm(32, self.mask_channels))
+                if norm in ["GN", "BN", "SyncBN"]:
+                    conv_tower.append(get_norm(norm, self.mask_channels))
+                else:
+                    conv_tower.append(nn.Sequential())
                 conv_tower.append(nn.ReLU(inplace=False))
                 convs_per_level.add_module('conv' + str(i), nn.Sequential(*conv_tower))
                 self.convs_all_levels.append(convs_per_level)
@@ -667,13 +687,15 @@ class SOLOv2MaskHead(nn.Module):
                 if j == 0:
                     chn = self.mask_in_channels + 2 if i == 3 else self.mask_in_channels
                     conv_tower = list()
-                    conv_tower.append(nn.Conv2d(
+                    conv_tower.append(Conv2d(
                         chn, self.mask_channels,
                         kernel_size=3, stride=1,
                         padding=1, bias=norm is None
                     ))
-                    if norm == "GN":
-                        conv_tower.append(nn.GroupNorm(32, self.mask_channels))
+                    if norm in ["GN", "BN", "SyncBN"]:
+                        conv_tower.append(get_norm(norm, self.mask_channels))
+                    else:
+                        conv_tower.append(nn.Sequential())
                     conv_tower.append(nn.ReLU(inplace=False))
                     convs_per_level.add_module('conv' + str(j), nn.Sequential(*conv_tower))
                     upsample_tower = nn.Upsample(
@@ -682,13 +704,15 @@ class SOLOv2MaskHead(nn.Module):
                         'upsample' + str(j), upsample_tower)
                     continue
                 conv_tower = list()
-                conv_tower.append(nn.Conv2d(
+                conv_tower.append(Conv2d(
                     self.mask_channels, self.mask_channels,
                     kernel_size=3, stride=1,
                     padding=1, bias=norm is None
                 ))
-                if norm == "GN":
-                    conv_tower.append(nn.GroupNorm(32, self.mask_channels))
+                if norm in ["GN", "BN", "SyncBN"]:
+                    conv_tower.append(get_norm(norm, self.mask_channels))
+                else:
+                    conv_tower.append(nn.Sequential())
                 conv_tower.append(nn.ReLU(inplace=False))
                 convs_per_level.add_module('conv' + str(j), nn.Sequential(*conv_tower))
                 upsample_tower = nn.Upsample(
@@ -698,11 +722,11 @@ class SOLOv2MaskHead(nn.Module):
             self.convs_all_levels.append(convs_per_level)
 
         self.conv_pred = nn.Sequential(
-            nn.Conv2d(
+            Conv2d(
                 self.mask_channels, self.num_masks,
                 kernel_size=1, stride=1,
                 padding=0, bias=norm is None),
-            nn.GroupNorm(32, self.num_masks),
+            get_norm(norm, self.num_masks),
             nn.ReLU(inplace=True)
         )
 

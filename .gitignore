@@ -13,6 +13,7 @@ __pycache__
 _ext
 *.pyc
 *.so
+*.out
 AdelaiDet.egg-info/
 build/
 dist/
@@ -38,6 +39,7 @@ dist/
 .python-version
 
 # project dirs
+/datasets/multi_task
 /datasets/coco
 /datasets/lvis
 /datasets/pic
@@ -49,9 +51,17 @@ dist/
 /weights
 /export
 eval.sh
+log
 
 demo/performance.py
 demo/demo2.py
 train.sh
 benchmark.sh
 script
+
+
+# dataset
+datasets/totaltext
+datasets/data
+pretrained
+tmp

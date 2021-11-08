@@ -29,7 +29,8 @@ class BidirectionalLSTM(nn.Module):
 class CRNN(nn.Module):
     def __init__(self, cfg, in_channels):
         super(CRNN, self).__init__()
-        conv_func = conv_with_kaiming_uniform(norm="GN", activation=True)
+        recognizer_norm = getattr(cfg.MODEL.BATEXT, 'RECOGNIZER_NORM', 'GN')
+        conv_func = conv_with_kaiming_uniform(norm=recognizer_norm, activation=True)
         convs = []
         for i in range(2):
             convs.append(conv_func(in_channels, in_channels, 3, stride=(2, 1)))
@@ -88,7 +89,7 @@ class Attention(nn.Module):
         output = torch.cat((embedded, attn_applied.squeeze(1)), 1)
         output = self.attn_combine(output).unsqueeze(0) # (1, n, hidden_size)
 
-        output = F.relu(output)
+        output = F.relu_(output)
         output, hidden = self.gru(output, hidden) # (1, n, hidden_size)
 
         output = F.log_softmax(self.out(output[0]), dim=1)  # (n, hidden_size)

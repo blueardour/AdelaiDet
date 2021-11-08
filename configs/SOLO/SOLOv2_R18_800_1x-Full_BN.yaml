@@ -1,0 +1,20 @@
+_BASE_: "Base-SOLOv2.yaml"
+MODEL:
+  WEIGHTS: "weights/det-resnet18/resnet18_w32a32.pth"
+  RESNETS:
+    DEPTH: 18
+    RES2_OUT_CHANNELS: 64
+    NORM: "BN"
+    STRIDE_IN_1X1: False
+  BACKBONE:
+    FREEZE_AT: 0
+  FPN:
+    NORM: "BN"
+    USE_RELU: True
+  SOLOV2:
+    NORM: "BN" # easily to casue stuck
+    NUM_INSTANCE_CONVS: 4
+    USE_DCN_IN_INSTANCE: False
+DATASETS:
+  TRAIN: ("coco_2017_train",)
+OUTPUT_DIR: output/solov2/SOLOv2_R18_800_1x-Full_BN

@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from detectron2.layers import ShapeSpec
+from detectron2.layers import ShapeSpec, get_norm, Conv2d
 from detectron2.modeling.proposal_generator.build import PROPOSAL_GENERATOR_REGISTRY
 
 from adet.layers import DFConv2d, IOULoss
@@ -23,6 +23,19 @@ class Scale(nn.Module):
 
     def forward(self, input):
         return input * self.scale
+
+
+class ModuleListDial(nn.ModuleList):
+    def __init__(self, modules=None):
+        super(ModuleListDial, self).__init__(modules)
+        self.cur_position = 0
+
+    def forward(self, x):
+        result = self[self.cur_position](x)
+        self.cur_position += 1
+        if self.cur_position >= len(self):
+            self.cur_position = 0
+        return result
 
 
 @PROPOSAL_GENERATOR_REGISTRY.register()
@@ -179,6 +192,7 @@ class FCOSHead(nn.Module):
                         "share": (cfg.MODEL.FCOS.NUM_SHARE_CONVS,
                                   cfg.MODEL.FCOS.USE_DEFORMABLE)}
         norm = None if cfg.MODEL.FCOS.NORM == "none" else cfg.MODEL.FCOS.NORM
+        self.num_levels = len(input_shape)
 
         in_channels = [s.channels for s in input_shape]
         assert len(set(in_channels)) == 1, "Each level must have the same channel!"
@@ -190,7 +204,7 @@ class FCOSHead(nn.Module):
             if use_deformable:
                 conv_func = DFConv2d
             else:
-                conv_func = nn.Conv2d
+                conv_func = Conv2d
             for i in range(num_convs):
                 tower.append(conv_func(
                     in_channels, in_channels,
@@ -199,7 +213,13 @@ class FCOSHead(nn.Module):
                 ))
                 if norm == "GN":
                     tower.append(nn.GroupNorm(32, in_channels))
-                tower.append(nn.ReLU())
+                elif norm in ["BN", "SyncBN"]:
+                    tower.append(ModuleListDial([
+                        get_norm(norm, in_channels) for _ in range(self.num_levels)
+                    ]))
+                else:
+                    tower.append(nn.Sequential())
+                tower.append(nn.ReLU(inplace=True))
             self.add_module('{}_tower'.format(head),
                             nn.Sequential(*tower))
 
@@ -256,7 +276,7 @@ class FCOSHead(nn.Module):
             if self.scales is not None:
                 reg = self.scales[l](reg)
             # Note that we use relu, as in the improved FCOS, instead of exp.
-            bbox_reg.append(F.relu(reg))
+            bbox_reg.append(F.relu_(reg))
             if top_module is not None:
                 top_feats.append(top_module(bbox_tower))
         return logits, bbox_reg, ctrness, top_feats, bbox_towers

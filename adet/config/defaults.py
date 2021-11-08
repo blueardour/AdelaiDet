@@ -30,6 +30,7 @@ _C.MODEL.FCOS.POST_NMS_TOPK_TRAIN = 100
 _C.MODEL.FCOS.POST_NMS_TOPK_TEST = 100
 _C.MODEL.FCOS.TOP_LEVELS = 2
 _C.MODEL.FCOS.NORM = "GN"  # Support GN or none
+_C.MODEL.FCOS.SKIP = "none"  # Employ Skip connection for improve quantization performance
 _C.MODEL.FCOS.USE_SCALE = True
 
 # The options for the quality of box prediction
@@ -102,6 +103,8 @@ _C.MODEL.BATEXT.POOLER_SCALES = (0.25, 0.125, 0.0625)
 _C.MODEL.BATEXT.SAMPLING_RATIO = 1
 _C.MODEL.BATEXT.CONV_DIM = 256
 _C.MODEL.BATEXT.NUM_CONV = 2
+_C.MODEL.BATEXT.NORM = "BN"
+_C.MODEL.BATEXT.RECOGNIZER_NORM = "GN"
 _C.MODEL.BATEXT.RECOGNITION_LOSS = "ctc"
 _C.MODEL.BATEXT.RECOGNIZER = "attn"
 _C.MODEL.BATEXT.CANONICAL_SIZE = 96  # largest min_size for level 3 (stride=8)
