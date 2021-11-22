@@ -52,12 +52,14 @@ dist/
 /export
 eval.sh
 log
+config/Detection
 
 demo/performance.py
 demo/demo2.py
 train.sh
 benchmark.sh
 script
+env.sh
 
 
 # dataset

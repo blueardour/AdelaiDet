@@ -363,3 +363,60 @@ _C.MODEL.FCPOSE.BASIS_MODULE.COMMON_STRIDE = 8
 _C.MODEL.FCPOSE.BASIS_MODULE.NUM_CLASSES = 17
 _C.MODEL.FCPOSE.BASIS_MODULE.LOSS_WEIGHT = 0.2
 _C.MODEL.FCPOSE.BASIS_MODULE.BN_TYPE = "SyncBN"
+
+########  quantization related options begin #############
+# double initilization
+_C.MODEL.EXTRA_WEIGHTS = ""
+
+# RELU in FPN
+_C.MODEL.FPN.USE_RELU = False
+
+# RPN
+_C.MODEL.RPN.HEAD_NORM = ""
+
+# log
+_C.SOLVER.PRINT_PERIOD = 20
+
+# quantization options
+_C.MODEL.QUANTIZATION = CN()
+_C.MODEL.QUANTIZATION.global_buffer = CN() # global_buffer
+_C.MODEL.QUANTIZATION.keyword = ['', ]
+_C.MODEL.QUANTIZATION.scope = ['', ]
+_C.MODEL.QUANTIZATION.stable = 0
+_C.MODEL.QUANTIZATION.policy = '' # all options can be updated with policy file
+_C.MODEL.QUANTIZATION.padding_after_quant = False
+_C.MODEL.QUANTIZATION.probe_list = []
+# for feature map
+_C.MODEL.QUANTIZATION.fm_enable = False
+_C.MODEL.QUANTIZATION.fm_bit = 32.0
+_C.MODEL.QUANTIZATION.fm_level = 0
+_C.MODEL.QUANTIZATION.fm_half_range = True
+_C.MODEL.QUANTIZATION.fm_separator = 0.38
+_C.MODEL.QUANTIZATION.fm_ratio = 1.0
+_C.MODEL.QUANTIZATION.fm_scale = 0.5
+_C.MODEL.QUANTIZATION.fm_boundary = 1.0
+_C.MODEL.QUANTIZATION.fm_quant_group = 0
+_C.MODEL.QUANTIZATION.fm_adaptive = "none"
+_C.MODEL.QUANTIZATION.fm_grad_type = "none"
+# for weight
+_C.MODEL.QUANTIZATION.wt_enable = False
+_C.MODEL.QUANTIZATION.wt_bit = 32.0
+_C.MODEL.QUANTIZATION.wt_level = 0
+_C.MODEL.QUANTIZATION.wt_half_range = False
+_C.MODEL.QUANTIZATION.wt_separator = 0.38
+_C.MODEL.QUANTIZATION.wt_ratio = 1.0
+_C.MODEL.QUANTIZATION.wt_scale = 0.5
+_C.MODEL.QUANTIZATION.wt_boundary = 1.0
+_C.MODEL.QUANTIZATION.wt_quant_group = 0
+_C.MODEL.QUANTIZATION.wt_adaptive = "none"
+_C.MODEL.QUANTIZATION.wt_grad_type = "none"
+# progressive training
+_C.MODEL.QUANTIZATION.progressive = CN()
+_C.MODEL.QUANTIZATION.progressive.enable = False
+_C.MODEL.QUANTIZATION.progressive.scope = ['', ]
+_C.MODEL.QUANTIZATION.progressive.fm_start_bit = 16.0
+_C.MODEL.QUANTIZATION.progressive.wt_start_bit = 16.0
+_C.MODEL.QUANTIZATION.progressive.fm_end_bit = 2.0
+_C.MODEL.QUANTIZATION.progressive.wt_end_bit = 2.0
+########  quantization related options end ############
+
