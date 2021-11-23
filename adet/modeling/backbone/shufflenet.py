@@ -2,13 +2,14 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from functools import partial
-
-from detectron2.layers.batch_norm import NaiveSyncBatchNorm
-from detectron2.modeling.backbone.build import BACKBONE_REGISTRY as BACKBONES
-from detectron2.modeling.backbone import Backbone as BaseModule
+import pdb
 
 from adet.modeling.layers import qconv, norm, actv, shuffle, concat, split, add
+
+from functools import partial
+
+from detectron2.modeling.backbone.build import BACKBONE_REGISTRY as BACKBONES
+from detectron2.modeling.backbone import Backbone as BaseModule
 
 class _ShuffleBottleneck(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None, mid_stride=1, mid_groups=6, out_groups=2, args=None):
@@ -107,57 +108,51 @@ class _ShuffleResUnitE(nn.Module):
         out = self.concat_res(x1, self.banch2(x2))
         return self.shfl_op(out)
 
-@BACKBONES.register_module()
+@BACKBONES.register()
 class ShuffleNet(BaseModule):
     """ShuffleNet implementation.
     """
-    def __init__(self, args=None, is_large=None, out_features=['res4'], **kwargs):
-        super(ShuffleNet, self).__init__(**kwargs)
+    def __init__(self, args=None, is_large=None, cfg="large_9cls", out_features=['res4'], init_cfg=None):
+        if hasattr(super(ShuffleNet, self), 'size_divisibility'):
+            super(ShuffleNet, self).__init__()
+        else:
+            super(ShuffleNet, self).__init__(init_cfg)
+
         self.args = args
         self.out_features = out_features
-        if not isinstance(is_large, bool):
-            if args is not None and hasattr(args, 'keyword'):
-                self.large = False if 'ShufflenetS' in args.keyword else True
-            else:
-                raise RuntimeError("either args or is_large should be provided")
-        else:
-            self.large = is_large
+
+        if is_large is not None:
+            print("is_large option is deprecated, use cfg instead")
+
+        _cfg = {
+            'large_7cls': [(24, None), (72, 4), (120, 5), (240, 8), (480, 5)],
+            'large_9cls': [(24, None), (48, 4), (72, 4), (144, 6), (288, 5)],
+            'small_9cls': [(24, None), (48, 4), (72, 6), (144, 4), (288, 4)],
+        }
+        assert cfg in _cfg, "cfg not found in the model definition"
+        self.cfg = cfg
+        self._cfg = _cfg
 
         QConv2d = partial(qconv, args=args)
         BatchNorm2d = partial(norm, args=args)
         QClippedReLU = partial(actv, args=args)
 
-        self.conv1 = QConv2d(3, 24, kernel_size=3, stride=2, padding=1, bias=False)
-        self.conv1_bn = BatchNorm2d(24)
+        in_channel, _ = _cfg[cfg][0]
+        self.conv1 = QConv2d(3, in_channel, kernel_size=3, stride=2, padding=1, bias=False)
+        self.conv1_bn = BatchNorm2d(in_channel)
         self.conv1_ReLU = QClippedReLU()
 
-        self.res1a = _ShuffleResUnitC(24, 48, args=args)
-        self.res1b = _ShuffleResUnitE(48, 48, stride=1, args=args)
-        self.res1c = _ShuffleResUnitE(48, 48, stride=1, args=args)
-        self.res1d = _ShuffleResUnitE(48, 48, stride=1, args=args)
+        self.name = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+        for i, (out_channel, items) in enumerate(_cfg[cfg]):
+            if items is None or i == 0:
+                continue
 
-        self.res2a = _ShuffleResUnitC(48, 72, args=args)
-        self.res2b = _ShuffleResUnitE(72, 72, stride=1, args=args)
-        self.res2c = _ShuffleResUnitE(72, 72, stride=1, args=args)
-        self.res2d = _ShuffleResUnitE(72, 72, stride=1, args=args)
-        if not self.large:
-            self.res2e = _ShuffleResUnitE(72, 72, stride=1, args=args)
-            self.res2f = _ShuffleResUnitE(72, 72, stride=1, args=args)
-
-        self.res3a = _ShuffleResUnitC(72, 144, args=args)
-        self.res3b = _ShuffleResUnitE(144, 144, stride=1, args=args)
-        self.res3c = _ShuffleResUnitE(144, 144, stride=1, args=args)
-        self.res3d = _ShuffleResUnitE(144, 144, stride=1, args=args)
-        if self.large:
-            self.res3e = _ShuffleResUnitE(144, 144, stride=1, args=args)
-            self.res3f = _ShuffleResUnitE(144, 144, stride=1, args=args)
-
-        self.res4a = _ShuffleResUnitC(144, 288, args=args)
-        self.res4b = _ShuffleResUnitE(288, 288, stride=1, args=args)
-        self.res4c = _ShuffleResUnitE(288, 288, stride=1, args=args)
-        self.res4d = _ShuffleResUnitE(288, 288, stride=1, args=args)
-        if self.large:
-            self.res4e = _ShuffleResUnitE(288, 288, stride=1, args=args)
+            for j in range(items):
+                if j == 0:
+                    self.add_module("res{}{}".format(i, self.name[j]), _ShuffleResUnitC(in_channel, out_channel, args=args))
+                else:
+                    self.add_module("res{}{}".format(i, self.name[j]), _ShuffleResUnitE(out_channel, out_channel, stride=1, args=args))
+            in_channel = out_channel
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -173,59 +168,29 @@ class ShuffleNet(BaseModule):
         if 'stem' in self.out_features:
             outputs.append(x)
 
-        # res1
-        x = self.res1a(x)
-        x = self.res1b(x)
-        x = self.res1c(x)
-        x = self.res1d(x)
-        if 'res1' in self.out_features:
-            outputs.append(x)
+        for i, (out_channel, items) in enumerate(self._cfg[self.cfg]):
+            if i == 0 or items is None:
+                continue
 
-        # res2
-        x = self.res2a(x)
-        x = self.res2b(x)
-        x = self.res2c(x)
-        x = self.res2d(x)
-        if not self.large:
-            x = self.res2e(x)
-            x = self.res2f(x)
-        if 'res2' in self.out_features:
-            outputs.append(x)
+            for j in range(items):
+                x = getattr(self, "res{}{}".format(i, self.name[j]))(x)
 
-        # res3
-        x = self.res3a(x)
-        x = self.res3b(x)
-        x = self.res3c(x)
-        x = self.res3d(x)
-        if self.large:
-            x = self.res3e(x)
-            x = self.res3f(x)
-        if 'res3' in self.out_features:
-            outputs.append(x)
-
-        # res4
-        x = self.res4a(x)
-        x = self.res4b(x)
-        x = self.res4c(x)
-        x = self.res4d(x)
-        if self.large:
-            x = self.res4e(x)
-        if 'res4' in self.out_features:
-            outputs.append(x)
+            if 'res{}'.format(i) in self.out_features:
+                outputs.append(x)
 
         return outputs
 
 class ShuffleNet_(nn.Module):
-    def __init__(self, args=None, is_large=None):
+    def __init__(self, args=None, cfg=None):
         super(ShuffleNet_, self).__init__()
         self.args = args
 
-        self.backbone = ShuffleNet(args=args, is_large=is_large)
+        self.backbone = ShuffleNet(args=args, cfg=cfg)
         self.avgpool = nn.AdaptiveAvgPool2d((1,1))
 
         outplanes = self.backbone.res4d.out_channels
         fc_function = nn.Linear
-        self.fc = fc_function(outplanes, args.num_classes)
+        self.fc = fc_function(outplanes, getattr(args, 'num_classes', 1000))
 
     def forward(self, x):
         outputs = self.backbone(x)
@@ -238,9 +203,14 @@ class ShuffleNet_(nn.Module):
         return x
         
 def shufflenet_large(args=None):
-    return ShuffleNet_(args=args, is_large=True)
+    return ShuffleNet_(args=args, cfg='large_9cls')
 
 def shufflenet_small(args=None):
-    return ShuffleNet_(args=args, is_large=False)
+    return ShuffleNet_(args=args, cfg='small_9cls')
 
+def main():
+    model = shufflenet_large()
+
+if __name__ == "__main__":
+    main()
 
